@@ -223,11 +223,20 @@ All parameters are centralized in `scripts/config.py`:
 
 ## 📚 Documentation
 
+### Core Documentation
 - [docs/PIPELINE.md](docs/PIPELINE.md) - Detailed pipeline description
 - [docs/CONFIGURATION.md](docs/CONFIGURATION.md) - Configuration reference
 - [docs/STATISTICAL_TESTS.md](docs/STATISTICAL_TESTS.md) - Statistical methods
 - [docs/ML_MODELS.md](docs/ML_MODELS.md) - ML model details
 - [scripts/part2/README.md](scripts/part2/README.md) - Part 2 documentation
+
+### Results
+- [docs/RESULTS.md](docs/RESULTS.md) - Part 1 Results: Statistical AISNP Selection
+- [docs/RESULTS_PART2.md](docs/RESULTS_PART2.md) - Part 2 Results: Known AISNP Panel Comparison
+
+### Presentation & Diagrams
+- [docs/slides/PRESENTATION_OUTLINE.md](docs/slides/PRESENTATION_OUTLINE.md) - Slide-by-slide presentation guide (40 slides)
+- [docs/diagrams/SYSTEM_DIAGRAMS.md](docs/diagrams/SYSTEM_DIAGRAMS.md) - System block diagrams & data flow
 
 ## 🔗 References
 

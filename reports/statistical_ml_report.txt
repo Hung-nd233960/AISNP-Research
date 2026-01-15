@@ -1,0 +1,26 @@
+======================================================================
+ML TRAINING ON STATISTICALLY-SELECTED SNPs
+======================================================================
+
+Dataset:
+  Samples: 306
+  Populations: ['KHV', 'CHB', 'JPT']
+  Consensus SNPs: 164
+  Top SNPs used: 25
+
+Model Results (Top 25 SNPs):
+----------------------------------------------------------------------
+  SVM (RBF)                 | Acc: 0.8548 | F1: 0.8517 | CV: 0.8893
+  Random Forest             | Acc: 0.8387 | F1: 0.8315 | CV: 0.8852
+  AdaBoost                  | Acc: 0.8226 | F1: 0.8195 | CV: 0.8237
+  SVM (Linear)              | Acc: 0.8226 | F1: 0.8157 | CV: 0.8647
+  MLP Neural Network        | Acc: 0.8226 | F1: 0.8115 | CV: 0.8236
+  Gradient Boosting         | Acc: 0.8065 | F1: 0.8003 | CV: 0.8565
+  Logistic Regression       | Acc: 0.7903 | F1: 0.7842 | CV: 0.8566
+  K-Nearest Neighbors       | Acc: 0.7742 | F1: 0.7665 | CV: 0.8605
+  XGBoost                   | Acc: 0.7581 | F1: 0.7487 | CV: 0.8690
+  Naive Bayes               | Acc: 0.6774 | F1: 0.6803 | CV: 0.7540
+
+Best Model: SVM (RBF)
+  Accuracy: 0.8548
+  F1-Score: 0.8517

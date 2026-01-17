@@ -78,6 +78,20 @@ BioinfoMidterm/
 pip install pandas numpy scipy scikit-learn xgboost matplotlib seaborn tqdm statsmodels requests
 ```
 
+### Conda Environment (spec-file)
+
+- To recreate the exact environment used in this project, use the provided [spec-file.txt](spec-file.txt):
+
+```bash
+conda create -n aisnp --file spec-file.txt
+conda activate aisnp
+```
+
+### Data Download
+
+- Recommended: Use Globus to download 1000 Genomes Project data for fast, reliable transfers.
+- Merged all vcf with bcftools
+
 ### Running the Pipeline
 
 #### Part 1: Statistical SNP Selection
@@ -224,6 +238,7 @@ All parameters are centralized in `scripts/config.py`:
 ## 📚 Documentation
 
 ### Core Documentation
+
 - [docs/PIPELINE.md](docs/PIPELINE.md) - Detailed pipeline description
 - [docs/CONFIGURATION.md](docs/CONFIGURATION.md) - Configuration reference
 - [docs/STATISTICAL_TESTS.md](docs/STATISTICAL_TESTS.md) - Statistical methods
@@ -231,10 +246,12 @@ All parameters are centralized in `scripts/config.py`:
 - [scripts/part2/README.md](scripts/part2/README.md) - Part 2 documentation
 
 ### Results
+
 - [docs/RESULTS.md](docs/RESULTS.md) - Part 1 Results: Statistical AISNP Selection
 - [docs/RESULTS_PART2.md](docs/RESULTS_PART2.md) - Part 2 Results: Known AISNP Panel Comparison
 
 ### Presentation & Diagrams
+
 - [docs/slides/PRESENTATION_OUTLINE.md](docs/slides/PRESENTATION_OUTLINE.md) - Slide-by-slide presentation guide (40 slides)
 - [docs/diagrams/SYSTEM_DIAGRAMS.md](docs/diagrams/SYSTEM_DIAGRAMS.md) - System block diagrams & data flow
 

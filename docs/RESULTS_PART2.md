@@ -85,7 +85,7 @@ All AISNP panels were tested on the same sample set:
 
 #### 1. cal_et_al (52 SNPs)
 
-- **Origin**: Calibration study for East Asian ancestry
+- **Origin**: Cal_et_al study for East Asian ancestry
 - **Design**: Specifically selected for East Asian subpopulation differentiation
 - **Performance**: **Best overall** (91.50% accuracy)
 

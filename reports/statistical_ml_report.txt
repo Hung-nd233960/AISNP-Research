@@ -1,0 +1,27 @@
+======================================================================
+ML TRAINING ON STATISTICALLY-SELECTED SNPs
+======================================================================
+
+Dataset:
+  Samples: 504
+  Populations: ['CN', 'SEA', 'JPT']
+  Consensus SNPs: 205
+  Top SNPs used: 25
+
+Model Results (Top 25 SNPs):
+----------------------------------------------------------------------
+  K-Nearest Neighbors       | Acc: 0.8416 | F1: 0.8358 | CV: 0.8313
+  SVM (Linear)              | Acc: 0.8416 | F1: 0.8411 | CV: 0.8834
+  SVM (RBF)                 | Acc: 0.8416 | F1: 0.8395 | CV: 0.9007
+  MLP Neural Network        | Acc: 0.8416 | F1: 0.8387 | CV: 0.8335
+  Logistic Regression       | Acc: 0.8218 | F1: 0.8193 | CV: 0.8908
+  Random Forest             | Acc: 0.8218 | F1: 0.8186 | CV: 0.8810
+  XGBoost                   | Acc: 0.8218 | F1: 0.8191 | CV: 0.8835
+  TabPFN                    | Acc: 0.8119 | F1: 0.8080 | CV: 0.9083
+  AdaBoost                  | Acc: 0.8020 | F1: 0.8010 | CV: 0.8536
+  Gradient Boosting         | Acc: 0.8020 | F1: 0.7995 | CV: 0.8488
+  Naive Bayes               | Acc: 0.5545 | F1: 0.5165 | CV: 0.5136
+
+Best Model: K-Nearest Neighbors
+  Accuracy: 0.8416
+  F1-Score: 0.8358

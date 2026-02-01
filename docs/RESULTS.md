@@ -348,3 +348,20 @@ Configuration parameters are centralized in `scripts/config.py`.
 *Report generated from Part 1 pipeline analysis*
 *Target: East Asian Subpopulation Ancestry Inference*
 *Date: January 2026*
+---
+
+## Additional Analysis: SEA-JPT-CN Results
+
+For detailed results on the CN/SEA/JPT population classification (Chinese, Southeast Asian, Japanese), see:
+
+**[SEA_JPT_CN_RESULTS.md](SEA_JPT_CN_RESULTS.md)**
+
+### Quick Summary (CN-SEA-JPT)
+
+| Metric | Value |
+|--------|-------|
+| Consensus SNPs | 31 |
+| Best Accuracy (31 SNPs) | 84.71% |
+| Best Accuracy (50 SNPs) | 93.07% test / 96.28% CV |
+| Best Model | SVM (RBF), TabPFN |
+| F<sub>ST</sub> Range | 0.0044 - 0.0134 |

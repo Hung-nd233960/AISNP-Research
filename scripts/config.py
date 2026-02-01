@@ -21,56 +21,164 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 
 
-@dataclass(frozen=True)
+@dataclass
 class PathConfig:
-    """Path configuration for input/output directories."""
+    """Path configuration for input/output directories.
 
-    # Root directories
+    Paths are dynamically generated based on the population configuration.
+    - khv_jpt_chb: Uses 1000genomes/output/ directory
+    - sea_jpt_cn: Uses 1000genomes/output_sea_jpt_cn/ directory
+    """
+
+    # Configuration name (determines output directory)
+    config_name: str = "khv_jpt_chb"
+
+    # Root directories (constant)
     ROOT: Path = Path("/home/Plutonium/Documents/BioinfoMidterm")
-    DATA_DIR: Path = Path("1000genomes")
-    OUTPUT_DIR: Path = Path("1000genomes/output")
-    VCF_DIR: Path = Path("1000genomes/vcf")
-    REPORTS_DIR: Path = Path("reports")
 
-    # Input data
+    # Input data (shared between configs)
     VCF_FILE: Path = Path("1000genomes/main_vcf/ALL_merged.vcf.gz")
     PANEL_FILE: Path = Path(
         "1000genomes/main_vcf/integrated_call_samples_v3.20130502.ALL.panel"
     )
 
+    @property
+    def _prefix(self) -> str:
+        """Get the prefix for output files based on config."""
+        if self.config_name == "khv_jpt_chb":
+            return "EAS"
+        else:
+            return "SEA_JPT_CN"
+
+    @property
+    def _output_subdir(self) -> str:
+        """Get the output subdirectory based on config."""
+        if self.config_name == "khv_jpt_chb":
+            return "output"
+        else:
+            return "output_sea_jpt_cn"
+
+    @property
+    def DATA_DIR(self) -> Path:
+        return Path("1000genomes")
+
+    @property
+    def OUTPUT_DIR(self) -> Path:
+        return Path(f"1000genomes/{self._output_subdir}")
+
+    @property
+    def VCF_DIR(self) -> Path:
+        return Path(f"1000genomes/vcf_{self.config_name}")
+
+    @property
+    def REPORTS_DIR(self) -> Path:
+        return Path(f"reports/{self.config_name}")
+
     # Sample lists
-    EAS_SAMPLES_CSV: Path = Path("1000genomes/EAS_subpopulation_samples.csv")
-    EAS_SAMPLES_LIST: Path = Path("1000genomes/EAS_subpopulation_samples_list.csv")
+    @property
+    def EAS_SAMPLES_CSV(self) -> Path:
+        return Path(f"1000genomes/{self._prefix}_subpopulation_samples.csv")
+
+    @property
+    def EAS_SAMPLES_LIST(self) -> Path:
+        return Path(f"1000genomes/{self._prefix}_subpopulation_samples_list.csv")
 
     # Intermediate outputs - Hard filtered
-    PLINK_SNP_FILTERED: Path = Path("1000genomes/output/EAS_AND_SNP_filtered_data")
-    PLINK_MAF_FILTERED: Path = Path(
-        "1000genomes/output/EAS_AND_SNP_filtered_data_MAF_filtered"
-    )
+    @property
+    def PLINK_SNP_FILTERED(self) -> Path:
+        return Path(
+            f"1000genomes/{self._output_subdir}/{self._prefix}_AND_SNP_filtered_data"
+        )
+
+    @property
+    def PLINK_MAF_FILTERED(self) -> Path:
+        return Path(
+            f"1000genomes/{self._output_subdir}/{self._prefix}_AND_SNP_filtered_data_MAF_filtered"
+        )
 
     # Intermediate outputs - Situational filtered
-    PLINK_HWE_FILTERED: Path = Path("1000genomes/output/EAS_SNP_MAF_HWE_filtered")
-    PLINK_UNIQUE_IDS: Path = Path(
-        "1000genomes/output/EAS_SNP_MAF_HWE_filtered_unique_ids"
-    )
-    PLINK_LD_PRUNED: Path = Path("1000genomes/output/EAS_FINAL_DATA_FOR_FST")
+    @property
+    def PLINK_HWE_FILTERED(self) -> Path:
+        return Path(
+            f"1000genomes/{self._output_subdir}/{self._prefix}_SNP_MAF_HWE_filtered"
+        )
+
+    @property
+    def PLINK_UNIQUE_IDS(self) -> Path:
+        return Path(
+            f"1000genomes/{self._output_subdir}/{self._prefix}_SNP_MAF_HWE_filtered_unique_ids"
+        )
+
+    @property
+    def PLINK_LD_PRUNED(self) -> Path:
+        return Path(
+            f"1000genomes/{self._output_subdir}/{self._prefix}_FINAL_DATA_FOR_FST"
+        )
 
     # FST and SNP selection
-    FST_RESULTS: Path = Path("1000genomes/output/EAS_FST_RESULTS")
-    TOP_SNPS_FILE: Path = Path("1000genomes/output/top_snps.txt")
-    TOP_SNPS_BED: Path = Path("1000genomes/output/top_snps.bed")
-    FST_FILTERED: Path = Path("1000genomes/output/FST_FILTERED")
+    @property
+    def FST_RESULTS(self) -> Path:
+        return Path(f"1000genomes/{self._output_subdir}/{self._prefix}_FST_RESULTS")
+
+    @property
+    def TOP_SNPS_FILE(self) -> Path:
+        return Path(f"1000genomes/{self._output_subdir}/top_snps.txt")
+
+    @property
+    def TOP_SNPS_BED(self) -> Path:
+        return Path(f"1000genomes/{self._output_subdir}/top_snps.bed")
+
+    @property
+    def FST_FILTERED(self) -> Path:
+        return Path(f"1000genomes/{self._output_subdir}/FST_FILTERED")
 
     # PCA outputs
-    PCA_FILE: Path = Path("1000genomes/output/FST_PCA")
+    @property
+    def PCA_FILE(self) -> Path:
+        return Path(f"1000genomes/{self._output_subdir}/FST_PCA")
 
     # ML data
-    ML_DATA: Path = Path("1000genomes/vcf/vcf_numeric_transposed_with_population.csv")
-    ML_MODELS_DIR: Path = Path("output/ml_models")
+    @property
+    def ML_DATA(self) -> Path:
+        return Path(
+            f"1000genomes/vcf_{self.config_name}/vcf_numeric_transposed_with_population.csv"
+        )
+
+    @property
+    def ML_MODELS_DIR(self) -> Path:
+        return Path(f"output/ml_models/{self.config_name}")
 
     def get_absolute(self, relative_path: Path) -> Path:
         """Convert relative path to absolute."""
         return self.ROOT / relative_path
+
+    def ensure_output_dirs(self) -> None:
+        """Create output directories if they don't exist."""
+        dirs_to_create = [
+            self.OUTPUT_DIR,
+            self.VCF_DIR,
+            self.REPORTS_DIR,
+            self.ML_MODELS_DIR,
+        ]
+        for dir_path in dirs_to_create:
+            abs_path = self.get_absolute(dir_path)
+            abs_path.mkdir(parents=True, exist_ok=True)
+
+
+def get_path_config(config_name: str = "khv_jpt_chb") -> PathConfig:
+    """
+    Get path configuration for a specific population config.
+
+    Args:
+        config_name: One of "khv_jpt_chb" or "sea_jpt_cn"
+
+    Returns:
+        PathConfig instance with appropriate paths
+    """
+    valid_configs = ["khv_jpt_chb", "sea_jpt_cn"]
+    if config_name not in valid_configs:
+        raise ValueError(f"Unknown config: {config_name}. Available: {valid_configs}")
+    return PathConfig(config_name=config_name)
 
 
 @dataclass(frozen=True)
@@ -150,14 +258,98 @@ class Plink2Config:
 class PopulationConfig:
     """Population definitions for the study."""
 
-    # East Asian subpopulations of interest
-    EAS_SUBPOPS: tuple = ("CHB", "JPT", "KHV")
+    # Configuration name
+    CONFIG_NAME: str = "khv_jpt_chb"
 
     # Super population
     SUPER_POP: str = "EAS"
 
+    # East Asian subpopulations in the raw data
+    RAW_SUBPOPS: tuple = ("CHB", "JPT", "KHV")
+
+    # Target populations after any merging (same as RAW for khv_jpt_chb)
+    TARGET_POPS: tuple = ("CHB", "JPT", "KHV")
+
+    # Population merge mapping (empty dict means no merging)
+    # Format: {raw_pop: merged_group}
+    POP_MERGE_MAP: dict = field(default_factory=dict)
+
     # Number of samples (for frequency calculations)
     NUM_SAMPLES: int = 306
+
+    @property
+    def EAS_SUBPOPS(self) -> tuple:
+        """Backward compatibility alias for TARGET_POPS."""
+        return self.TARGET_POPS
+
+
+# =============================================================================
+# Predefined Population Configurations
+# =============================================================================
+
+
+def get_khv_jpt_chb_config() -> PopulationConfig:
+    """
+    KHV-JPT-CHB configuration: 3 populations, no merging.
+    Uses: KHV, JPT, CHB
+    """
+    return PopulationConfig(
+        CONFIG_NAME="khv_jpt_chb",
+        SUPER_POP="EAS",
+        RAW_SUBPOPS=("CHB", "JPT", "KHV"),
+        TARGET_POPS=("CHB", "JPT", "KHV"),
+        POP_MERGE_MAP={},
+        NUM_SAMPLES=306,
+    )
+
+
+def get_sea_jpt_cn_config() -> PopulationConfig:
+    """
+    SEA-JPT-CN configuration: 5 raw populations merged into 3 groups.
+    Raw populations: CHB, JPT, CHS, CDX, KHV
+    Merged groups:
+      - CN: CHB + CHS (Han Chinese)
+      - SEA: KHV + CDX (Southeast Asian)
+      - JPT: JPT (Japanese)
+    """
+    return PopulationConfig(
+        CONFIG_NAME="sea_jpt_cn",
+        SUPER_POP="EAS",
+        RAW_SUBPOPS=("CHB", "JPT", "CHS", "CDX", "KHV"),
+        TARGET_POPS=("CN", "JPT", "SEA"),
+        POP_MERGE_MAP={
+            "CHB": "CN",
+            "CHS": "CN",
+            "JPT": "JPT",
+            "KHV": "SEA",
+            "CDX": "SEA",
+        },
+        NUM_SAMPLES=504,  # All 5 EAS subpopulations
+    )
+
+
+def get_population_config(config_name: str = "khv_jpt_chb") -> PopulationConfig:
+    """
+    Get population configuration by name.
+
+    Args:
+        config_name: One of "khv_jpt_chb" or "sea_jpt_cn"
+
+    Returns:
+        PopulationConfig instance
+    """
+    configs = {
+        "khv_jpt_chb": get_khv_jpt_chb_config,
+        "sea_jpt_cn": get_sea_jpt_cn_config,
+    }
+
+    if config_name not in configs:
+        raise ValueError(
+            f"Unknown population config: {config_name}. "
+            f"Available: {list(configs.keys())}"
+        )
+
+    return configs[config_name]()
 
 
 @dataclass(frozen=True)
@@ -194,12 +386,41 @@ class MLConfig:
 # =============================================================================
 # Global configuration instances
 # =============================================================================
-PATHS = PathConfig()
+
+# Default config name
+_CURRENT_CONFIG_NAME = "khv_jpt_chb"
+
+PATHS = get_path_config(_CURRENT_CONFIG_NAME)
 HARD_FILTERS = HardFilterThresholds()
 SITUATIONAL_FILTERS = SituationalFilterThresholds()
 PLINK = Plink2Config()
-POPULATIONS = PopulationConfig()
+
+# Default population config - can be changed by calling set_population_config()
+POPULATIONS = get_khv_jpt_chb_config()
 ML = MLConfig()
+
+
+def set_population_config(config_name: str) -> None:
+    """
+    Set the global population and path configuration.
+
+    Args:
+        config_name: One of "khv_jpt_chb" or "sea_jpt_cn"
+
+    This updates both POPULATIONS and PATHS global variables.
+    """
+    global POPULATIONS, PATHS, _CURRENT_CONFIG_NAME
+    _CURRENT_CONFIG_NAME = config_name
+    POPULATIONS = get_population_config(config_name)
+    PATHS = get_path_config(config_name)
+
+    # Ensure output directories exist
+    PATHS.ensure_output_dirs()
+
+
+def get_current_config_name() -> str:
+    """Get the current configuration name."""
+    return _CURRENT_CONFIG_NAME
 
 
 def print_config_summary():
@@ -207,6 +428,12 @@ def print_config_summary():
     print("=" * 60)
     print("CONFIGURATION SUMMARY")
     print("=" * 60)
+
+    print("\n--- PATHS ---")
+    print(f"  Config name:    {PATHS.config_name}")
+    print(f"  Output dir:     {PATHS.OUTPUT_DIR}")
+    print(f"  VCF dir:        {PATHS.VCF_DIR}")
+    print(f"  Samples CSV:    {PATHS.EAS_SAMPLES_CSV}")
 
     print("\n--- HARD FILTERS (Always Applied) ---")
     print(f"  SNP-only:      {HARD_FILTERS.SNP_ONLY}")
@@ -223,7 +450,11 @@ def print_config_summary():
     print(f"  FST top N:     {SITUATIONAL_FILTERS.FST_TOP_N}")
 
     print("\n--- POPULATIONS ---")
-    print(f"  Subpopulations: {POPULATIONS.EAS_SUBPOPS}")
+    print(f"  Config name:    {POPULATIONS.CONFIG_NAME}")
+    print(f"  Raw subpops:    {POPULATIONS.RAW_SUBPOPS}")
+    print(f"  Target pops:    {POPULATIONS.TARGET_POPS}")
+    if POPULATIONS.POP_MERGE_MAP:
+        print(f"  Merge mapping:  {POPULATIONS.POP_MERGE_MAP}")
     print(f"  Num samples:    {POPULATIONS.NUM_SAMPLES}")
 
     print("=" * 60)

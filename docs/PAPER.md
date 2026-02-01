@@ -16,13 +16,16 @@
 
 > **Background**: Ancestry-informative single nucleotide polymorphisms (AISNPs) are critical biomarkers for population stratification in biomedical research, forensic genetics, and personalized medicine. While panels exist for continental-level ancestry inference, distinguishing closely related subpopulations remains challenging due to minimal genetic differentiation.
 >
-> **Objective**: To develop and validate a minimal AISNP panel capable of distinguishing three East Asian subpopulations (Han Chinese, Japanese, and Vietnamese) using a rigorous statistical selection framework combined with machine learning validation.
+> **Objective**: To develop and validate minimal AISNP panels capable of distinguishing East Asian subpopulations using a rigorous statistical selection framework combined with machine learning validation. Two population groupings were analyzed: (1) CHB, JPT, KHV (Han Chinese, Japanese, Vietnamese) and (2) CN, JPT, SEA (Chinese, Japanese, Southeast Asian).
 >
-> **Methods**: We analyzed 306 samples from the 1000 Genomes Project representing CHB (n=103), JPT (n=104), and KHV (n=99) populations. A multi-stage pipeline applied: (1) hard quality control filtering, (2) Hardy-Weinberg equilibrium and linkage disequilibrium pruning, (3) four-test statistical consensus selection (χ², mutual information, information gain, Kullback-Leibler divergence), and (4) machine learning cross-validation with 10 classifiers.
+> **Methods**: We analyzed samples from the 1000 Genomes Project representing East Asian populations. A multi-stage pipeline applied: (1) hard quality control filtering, (2) Hardy-Weinberg equilibrium and linkage disequilibrium pruning, (3) four-test statistical consensus selection (χ², mutual information, information gain, Kullback-Leibler divergence), and (4) machine learning cross-validation with 10+ classifiers including TabPFN.
 >
-> **Results**: A consensus panel of 37 AISNPs achieved 89.55% classification accuracy (5-fold CV) using Support Vector Machine with RBF kernel. This panel demonstrated superior efficiency (2.42% accuracy per SNP) compared to published panels containing 52-125 markers. Pairwise Hudson F_ST values (0.006-0.013) confirmed minimal genetic differentiation, highlighting the challenge addressed.
+> **Results**:
 >
-> **Conclusions**: The four-test statistical consensus approach effectively identifies population-discriminating variants despite low F_ST values. The resulting 37-SNP panel offers a cost-effective solution for East Asian ancestry inference applicable to forensic genetics and pharmacogenomics studies.
+> - **CHB-JPT-KHV analysis**: A consensus panel of 37 AISNPs achieved 89.55% classification accuracy (5-fold CV) using SVM-RBF. This panel demonstrated superior efficiency (2.42% accuracy per SNP) compared to published panels containing 52-125 markers.
+> - **CN-SEA-JPT analysis**: A consensus panel of 31 AISNPs achieved 84.71% accuracy. Extended to 50 SNPs, performance reached 93.07% test accuracy and 96.28% CV accuracy with SVM-RBF. TabPFN achieved 96.27% CV accuracy with 45 SNPs.
+>
+> **Conclusions**: The four-test statistical consensus approach effectively identifies population-discriminating variants despite low F_ST values (0.004-0.013). The resulting panels offer cost-effective solutions for East Asian ancestry inference applicable to forensic genetics and pharmacogenomics studies.
 
 ---
 
@@ -409,6 +412,94 @@ Known AISNP panels converted to GRCh37 coordinates via Ensembl REST API and eval
 
 ---
 
+## V-B. SEA-JPT-CN POPULATION ANALYSIS RESULTS
+
+### A. Population Overview
+
+An extended analysis was conducted on a three-way classification of Chinese (CN), Japanese (JPT), and Southeast Asian (SEA) populations using the same statistical consensus framework.
+
+#### Population Genetic Differentiation (F<sub>ST</sub>)
+
+| Population Pair | Hudson F<sub>ST</sub> | Interpretation |
+|-----------------|----------------------|----------------|
+| CN ↔ JPT | 0.0069 | Very low differentiation |
+| CN ↔ SEA | 0.0044 | Very low differentiation |
+| JPT ↔ SEA | 0.0134 | Low differentiation |
+
+### B. Consensus SNP Selection
+
+The four-test statistical consensus approach identified **31 SNPs** that passed all selection criteria (χ², MI, IG, KL divergence).
+
+**Top 10 Consensus SNPs:**
+
+| Rank | SNP ID | χ² p-value | MI | KL |
+|------|--------|------------|-----|-----|
+| 1 | 4:17813761[b37]G,A | 9.58×10⁻³⁹ | 0.192 | 3.88 |
+| 2 | 1:12387655[b37]G,A | 1.84×10⁻³⁵ | 0.174 | 3.87 |
+| 3 | 5:41181491[b37]G,T | 1.44×10⁻³¹ | 0.155 | 3.28 |
+| 4 | 14:96938945[b37]A,T | 7.55×10⁻³¹ | 0.161 | 2.86 |
+| 5 | 11:112053732[b37]T,A | 5.88×10⁻²³ | 0.119 | 2.15 |
+| 6 | 1:168205652[b37]G,A | 1.10×10⁻²¹ | 0.105 | 2.41 |
+| 7 | 7:156743124[b37]G,T | 3.69×10⁻¹⁷ | 0.087 | 3.23 |
+| 8 | 16:46417894[b37]G,A | 7.71×10⁻¹⁹ | 0.101 | 1.53 |
+| 9 | 20:5547557[b37]A,T | 2.32×10⁻¹⁷ | 0.085 | 1.72 |
+| 10 | 1:79095386[b37]A,T | 2.58×10⁻¹⁷ | 0.089 | 1.63 |
+
+### C. Machine Learning Performance
+
+#### Cross-Validation Results (31 Consensus SNPs)
+
+| Rank | Model | Accuracy | F1-Score |
+|------|-------|----------|----------|
+| 1 | Logistic Regression | 84.71% | 0.847 |
+| 2 | XGBoost | 84.52% | 0.845 |
+| 3 | SVM (RBF) | 82.93% | 0.829 |
+| 4 | Random Forest | 82.73% | 0.827 |
+| 5 | SVM (Linear) | 82.14% | 0.821 |
+
+#### Performance with Extended SNP Panels (25-50 SNPs)
+
+> **Table: Test Accuracy by SNP Count**
+
+| N_SNPs | SVM (RBF) | TabPFN | XGBoost | Logistic Reg. |
+|--------|-----------|--------|---------|---------------|
+| 25 | 84.16% | 81.19% | 82.18% | 82.18% |
+| 30 | 90.10% | 88.12% | 87.13% | 82.18% |
+| 35 | 92.08% | 89.11% | 92.08% | 90.10% |
+| 40 | **93.07%** | **93.07%** | 91.09% | 91.09% |
+| 45 | 92.08% | 91.09% | 91.09% | 92.08% |
+| 50 | **93.07%** | 91.09% | 92.08% | 91.09% |
+
+> **Table: Cross-Validation Accuracy by SNP Count**
+
+| N_SNPs | SVM (RBF) | TabPFN | XGBoost | Logistic Reg. |
+|--------|-----------|--------|---------|---------------|
+| 25 | 90.07% | 90.83% | 88.35% | 89.08% |
+| 30 | 91.31% | **92.81%** | 90.08% | 89.83% |
+| 35 | 93.55% | 92.07% | 90.57% | 92.31% |
+| 40 | 94.05% | **94.79%** | 91.32% | 93.56% |
+| 45 | 95.04% | **96.27%** | 91.56% | 94.54% |
+| 50 | **96.28%** | 96.03% | 91.56% | 94.80% |
+
+### D. Key Findings (SEA-JPT-CN)
+
+1. **Optimal Panel Size**: 40-50 SNPs achieve >93% test accuracy and >96% CV accuracy
+2. **Best Models**: SVM (RBF) and TabPFN show consistently highest performance
+3. **Efficiency**: 31 consensus SNPs achieve ~85% accuracy (2.74% per SNP)
+4. **Scalability**: Accuracy improves steadily from 25→50 SNPs with diminishing returns after 40 SNPs
+
+### E. Comparison: CHB-JPT-KHV vs CN-SEA-JPT
+
+| Metric | CHB-JPT-KHV | CN-SEA-JPT |
+|--------|-------------|------------|
+| Consensus SNPs | 37 | 31 |
+| Best Accuracy (Consensus) | 89.55% | 84.71% |
+| Best Accuracy (Extended) | — | 96.28% |
+| Best Model | SVM (RBF) | SVM (RBF) |
+| Mean F<sub>ST</sub> | 0.0081 | 0.0082 |
+
+---
+
 ## VI. DISCUSSION
 
 ### A. Principal Findings
@@ -476,16 +567,33 @@ Known AISNP panels converted to GRCh37 coordinates via Ensembl REST API and eval
 
 ### A. Summary
 
-This study demonstrates that a minimal panel of 37 statistically-selected AISNPs achieves 89.55% accuracy in distinguishing Han Chinese, Japanese, and Vietnamese populations. The four-test consensus framework (χ², MI, IG, KL divergence) effectively identifies population-discriminating markers despite low genetic differentiation (F_ST < 0.015).
+This study demonstrates that minimal panels of statistically-selected AISNPs can effectively distinguish East Asian subpopulations:
+
+1. **CHB-JPT-KHV Analysis**: 37 consensus SNPs achieve 89.55% accuracy in distinguishing Han Chinese, Japanese, and Vietnamese populations.
+
+2. **CN-SEA-JPT Analysis**: 31 consensus SNPs achieve 84.71% accuracy; extending to 40-50 SNPs reaches 93-96% accuracy with SVM-RBF and TabPFN classifiers.
+
+The four-test consensus framework (χ², MI, IG, KL divergence) effectively identifies population-discriminating markers despite low genetic differentiation (F_ST < 0.015).
 
 ### B. Key Contributions
 
 1. Novel multi-test statistical framework for AISNP selection
-2. Validated 37-SNP panel for East Asian subpopulation inference
-3. Evidence that targeted panel design outperforms larger generic panels
-4. Open-source, reproducible bioinformatics pipeline
+2. Validated 37-SNP panel for CHB/JPT/KHV inference (89.55% accuracy)
+3. Validated 31-50 SNP panel for CN/SEA/JPT inference (up to 96.28% CV accuracy)
+4. Evidence that targeted panel design outperforms larger generic panels
+5. Demonstration that TabPFN achieves state-of-the-art performance for ancestry inference
+6. Open-source, reproducible bioinformatics pipeline
 
-### C. Future Directions
+### C. Practical Recommendations
+
+| Application | Recommended Panel | Model | Expected Accuracy |
+|-------------|-------------------|-------|-------------------|
+| CHB/JPT/KHV classification | 37 consensus SNPs | SVM-RBF | ~90% |
+| CN/SEA/JPT (balanced) | 40-45 SNPs | TabPFN | ~95-96% |
+| CN/SEA/JPT (cost-effective) | 31 consensus SNPs | Log. Reg. | ~85% |
+| CN/SEA/JPT (maximum accuracy) | 50 SNPs | SVM-RBF | ~96% |
+
+### D. Future Directions
 
 1. **Expand populations**: Include CDX (Dai Chinese), CHS (Southern Han Chinese)
 2. **External validation**: Test on independent Asian cohorts

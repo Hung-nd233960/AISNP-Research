@@ -49,6 +49,7 @@ def run_plink2_command(
     check: bool = True,
     capture_output: bool = False,
     verbose: bool = True,
+    memory_mb: Optional[int] = None,
 ) -> subprocess.CompletedProcess:
     """
     Execute a PLINK2 command with error handling.
@@ -58,11 +59,15 @@ def run_plink2_command(
         check: Raise exception on non-zero exit code
         capture_output: Capture stdout/stderr
         verbose: Print command before execution
+        memory_mb: Main workspace size in MB (None = plink2 default)
 
     Returns:
         CompletedProcess instance
     """
-    cmd = [PLINK.EXECUTABLE, "--threads", str(PLINK.THREADS)] + args
+    cmd = [PLINK.EXECUTABLE, "--threads", str(PLINK.THREADS)]
+    if memory_mb is not None:
+        cmd += ["--memory", str(memory_mb)]
+    cmd += args
 
     if verbose:
         print(f"Running: {' '.join(cmd)}")

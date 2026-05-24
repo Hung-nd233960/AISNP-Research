@@ -13,6 +13,26 @@ NORM_DIR="${VCF_DIR}/normed"
 PLINK_DIR="${VCF_DIR}/plink"
 MERGE_LIST="${PLINK_DIR}/merge_list.txt"
 OUTPUT_PREFIX="${2:-allchr}"
+THREADS="${3:-0}"
+MEMORY_MB="${4:-}"
+
+# Build thread flags (empty when using defaults)
+if [ "$THREADS" -gt 0 ] 2>/dev/null; then
+    BCFTOOLS_THREADS="--threads $THREADS"
+    TABIX_THREADS="--threads $THREADS"
+    PLINK_THREADS="--threads $THREADS"
+else
+    BCFTOOLS_THREADS=""
+    TABIX_THREADS=""
+    PLINK_THREADS=""
+fi
+
+# Build memory flag (empty when using plink2 default)
+if [ -n "$MEMORY_MB" ]; then
+    PLINK_MEMORY="--memory $MEMORY_MB"
+else
+    PLINK_MEMORY=""
+fi
 
 # Create directories
 mkdir -p "$NORM_DIR"
@@ -21,6 +41,8 @@ mkdir -p "$PLINK_DIR"
 echo "=== VCF Preprocessing Pipeline ==="
 echo "VCF Directory: $VCF_DIR"
 echo "Output Prefix: $OUTPUT_PREFIX"
+echo "Threads:       ${THREADS:-default}"
+echo "Memory (MB):   ${MEMORY_MB:-default}"
 echo ""
 
 # -----------------------------------------------------------------------------
@@ -31,18 +53,26 @@ normalize_vcfs() {
     
     for vcf in "$VCF_DIR"/ALL.chr*.vcf.gz; do
         [ -f "$vcf" ] || continue
-        
+
         chr=$(basename "$vcf" .vcf.gz)
+
+        # Skip sex chromosomes and MT — autosomes only for AISNP analysis
+        chr_name=$(echo "$chr" | grep -oP '(?<=\.chr)[^.]+')
+        if ! [[ "$chr_name" =~ ^[0-9]+$ ]]; then
+            echo "  Skipping $chr (non-autosomal)"
+            continue
+        fi
+
         norm_vcf="$NORM_DIR/${chr}.norm.vcf.gz"
-        
+
         if [ -f "$norm_vcf" ]; then
             echo "  Skipping $chr (already normalized)"
             continue
         fi
-        
+
         echo "  Normalizing: $chr"
-        bcftools norm -m -both "$vcf" -Oz -o "$norm_vcf"
-        tabix -p vcf "$norm_vcf"
+        bcftools norm -m -both "$vcf" -Oz -o "$norm_vcf" $BCFTOOLS_THREADS
+        tabix -p vcf "$norm_vcf" $TABIX_THREADS
     done
     
     echo "  Done normalizing."
@@ -56,8 +86,16 @@ convert_to_plink() {
     
     for norm_vcf in "$NORM_DIR"/ALL.chr*.norm.vcf.gz; do
         [ -f "$norm_vcf" ] || continue
-        
+
         chr=$(basename "$norm_vcf" .norm.vcf.gz)
+
+        # Skip sex chromosomes and MT — autosomes only
+        chr_name=$(echo "$chr" | grep -oP '(?<=\.chr)[^.]+')
+        if ! [[ "$chr_name" =~ ^[0-9]+$ ]]; then
+            echo "  Skipping $chr (non-autosomal)"
+            continue
+        fi
+
         out_prefix="$PLINK_DIR/$chr"
         
         if [ -f "${out_prefix}.pgen" ]; then
@@ -68,7 +106,8 @@ convert_to_plink() {
         echo "  Converting: $chr"
         plink2 --vcf "$norm_vcf" \
                --make-pgen \
-               --out "$out_prefix"
+               --out "$out_prefix" \
+               $PLINK_THREADS $PLINK_MEMORY
     done
     
     echo "  Done converting."
@@ -110,7 +149,8 @@ merge_chromosomes() {
            --set-all-var-ids '@:#:\$r:\$a' \
            --new-id-max-allele-len 662 \
            --make-pgen \
-           --out "$PLINK_DIR/$OUTPUT_PREFIX"
+           --out "$PLINK_DIR/$OUTPUT_PREFIX" \
+           $PLINK_THREADS $PLINK_MEMORY
     
     echo "  Done merging."
 }

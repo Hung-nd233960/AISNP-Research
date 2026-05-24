@@ -16,8 +16,8 @@ set -e  # Exit on error
 
 # Configuration
 THREADS=8
-INPUT_PFILE="1000genomes/output/EAS_AND_SNP_filtered_data_MAF_filtered"
-OUTPUT_DIR="1000genomes/output"
+INPUT_PFILE="data/1000genomes/output/EAS_AND_SNP_filtered_data_MAF_filtered"
+OUTPUT_DIR="data/1000genomes/output"
 
 # Situational parameters (adjust as needed)
 HWE_THRESHOLD="1e-6"      # Relaxed for population genetics

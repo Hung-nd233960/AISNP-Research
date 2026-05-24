@@ -15,9 +15,9 @@ set -e  # Exit on error
 
 # Configuration
 THREADS=8
-INPUT_VCF="1000genomes/main_vcf/ALL_merged.vcf.gz"
-SAMPLE_LIST="1000genomes/EAS_subpopulation_samples_list.csv"
-OUTPUT_DIR="1000genomes/output"
+INPUT_PFILE="data/1000genomes/plink/allchr"
+SAMPLE_LIST="data/1000genomes/EAS_subpopulation_samples_list.csv"
+OUTPUT_DIR="data/1000genomes/output"
 MIN_AF=0.0016  # 1/612 alleles for 306 samples
 
 # Create output directory
@@ -26,7 +26,7 @@ mkdir -p $OUTPUT_DIR
 echo "=========================================="
 echo "RUNNING HARD FILTERS"
 echo "=========================================="
-echo "  Input VCF: $INPUT_VCF"
+echo "  Input pfile: $INPUT_PFILE"
 echo "  Sample list: $SAMPLE_LIST"
 echo "  Min AF: $MIN_AF"
 echo "  Threads: $THREADS"
@@ -40,7 +40,7 @@ echo ">>> STEP 1: SNP-only and Biallelic Filter"
 echo "    Removing indels, CNVs, and multi-allelic sites"
 echo ""
 
-plink2 --vcf $INPUT_VCF \
+plink2 --pfile $INPUT_PFILE \
        --snps-only \
        --max-alleles 2 \
        --keep $SAMPLE_LIST \

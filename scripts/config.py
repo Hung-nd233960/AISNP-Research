@@ -20,26 +20,32 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional, List
 
+# Project root is two levels up from this file (scripts/config.py → project root)
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 
 @dataclass
 class PathConfig:
     """Path configuration for input/output directories.
 
     Paths are dynamically generated based on the population configuration.
-    - khv_jpt_chb: Uses 1000genomes/output/ directory
-    - sea_jpt_cn: Uses 1000genomes/output_sea_jpt_cn/ directory
+    - khv_jpt_chb: Uses data/1000genomes/output/ directory
+    - sea_jpt_cn: Uses data/1000genomes/output_sea_jpt_cn/ directory
     """
 
     # Configuration name (determines output directory)
     config_name: str = "khv_jpt_chb"
 
-    # Root directories (constant)
-    ROOT: Path = Path("/home/Plutonium/Documents/BioinfoMidterm")
+    # Project root (auto-detected from this file's location)
+    ROOT: Path = field(default_factory=lambda: _PROJECT_ROOT)
 
     # Input data (shared between configs)
-    VCF_FILE: Path = Path("1000genomes/main_vcf/ALL_merged.vcf.gz")
+    # PLINK_MERGED: merged pgen prefix created by vcf_preprocessing.sh (no extension)
+    PLINK_MERGED: Path = Path("data/1000genomes/plink/allchr")
+    # VCF_FILE: merged VCF (only needed for bcftools operations in notebook 04)
+    VCF_FILE: Path = Path("data/1000genomes/main_vcf/ALL_merged.vcf.gz")
     PANEL_FILE: Path = Path(
-        "1000genomes/main_vcf/integrated_call_samples_v3.20130502.ALL.panel"
+        "data/1000genomes/integrated_call_samples_v3.20130502.ALL.panel"
     )
 
     @property
@@ -60,15 +66,15 @@ class PathConfig:
 
     @property
     def DATA_DIR(self) -> Path:
-        return Path("1000genomes")
+        return Path("data/1000genomes")
 
     @property
     def OUTPUT_DIR(self) -> Path:
-        return Path(f"1000genomes/{self._output_subdir}")
+        return Path(f"data/1000genomes/{self._output_subdir}")
 
     @property
     def VCF_DIR(self) -> Path:
-        return Path(f"1000genomes/vcf_{self.config_name}")
+        return Path(f"data/1000genomes/vcf_{self.config_name}")
 
     @property
     def REPORTS_DIR(self) -> Path:
@@ -77,71 +83,73 @@ class PathConfig:
     # Sample lists
     @property
     def EAS_SAMPLES_CSV(self) -> Path:
-        return Path(f"1000genomes/{self._prefix}_subpopulation_samples.csv")
+        return Path(f"data/1000genomes/{self._prefix}_subpopulation_samples.csv")
 
     @property
     def EAS_SAMPLES_LIST(self) -> Path:
-        return Path(f"1000genomes/{self._prefix}_subpopulation_samples_list.csv")
+        return Path(f"data/1000genomes/{self._prefix}_subpopulation_samples_list.csv")
 
     # Intermediate outputs - Hard filtered
     @property
     def PLINK_SNP_FILTERED(self) -> Path:
         return Path(
-            f"1000genomes/{self._output_subdir}/{self._prefix}_AND_SNP_filtered_data"
+            f"data/1000genomes/{self._output_subdir}/{self._prefix}_AND_SNP_filtered_data"
         )
 
     @property
     def PLINK_MAF_FILTERED(self) -> Path:
         return Path(
-            f"1000genomes/{self._output_subdir}/{self._prefix}_AND_SNP_filtered_data_MAF_filtered"
+            f"data/1000genomes/{self._output_subdir}/{self._prefix}_AND_SNP_filtered_data_MAF_filtered"
         )
 
     # Intermediate outputs - Situational filtered
     @property
     def PLINK_HWE_FILTERED(self) -> Path:
         return Path(
-            f"1000genomes/{self._output_subdir}/{self._prefix}_SNP_MAF_HWE_filtered"
+            f"data/1000genomes/{self._output_subdir}/{self._prefix}_SNP_MAF_HWE_filtered"
         )
 
     @property
     def PLINK_UNIQUE_IDS(self) -> Path:
         return Path(
-            f"1000genomes/{self._output_subdir}/{self._prefix}_SNP_MAF_HWE_filtered_unique_ids"
+            f"data/1000genomes/{self._output_subdir}/{self._prefix}_SNP_MAF_HWE_filtered_unique_ids"
         )
 
     @property
     def PLINK_LD_PRUNED(self) -> Path:
         return Path(
-            f"1000genomes/{self._output_subdir}/{self._prefix}_FINAL_DATA_FOR_FST"
+            f"data/1000genomes/{self._output_subdir}/{self._prefix}_FINAL_DATA_FOR_FST"
         )
 
     # FST and SNP selection
     @property
     def FST_RESULTS(self) -> Path:
-        return Path(f"1000genomes/{self._output_subdir}/{self._prefix}_FST_RESULTS")
+        return Path(
+            f"data/1000genomes/{self._output_subdir}/{self._prefix}_FST_RESULTS"
+        )
 
     @property
     def TOP_SNPS_FILE(self) -> Path:
-        return Path(f"1000genomes/{self._output_subdir}/top_snps.txt")
+        return Path(f"data/1000genomes/{self._output_subdir}/top_snps.txt")
 
     @property
     def TOP_SNPS_BED(self) -> Path:
-        return Path(f"1000genomes/{self._output_subdir}/top_snps.bed")
+        return Path(f"data/1000genomes/{self._output_subdir}/top_snps.bed")
 
     @property
     def FST_FILTERED(self) -> Path:
-        return Path(f"1000genomes/{self._output_subdir}/FST_FILTERED")
+        return Path(f"data/1000genomes/{self._output_subdir}/FST_FILTERED")
 
     # PCA outputs
     @property
     def PCA_FILE(self) -> Path:
-        return Path(f"1000genomes/{self._output_subdir}/FST_PCA")
+        return Path(f"data/1000genomes/{self._output_subdir}/FST_PCA")
 
     # ML data
     @property
     def ML_DATA(self) -> Path:
         return Path(
-            f"1000genomes/vcf_{self.config_name}/vcf_numeric_transposed_with_population.csv"
+            f"data/1000genomes/vcf_{self.config_name}/vcf_numeric_transposed_with_population.csv"
         )
 
     @property
@@ -201,8 +209,8 @@ class HardFilterThresholds:
     MAX_ALLELES: int = 2
 
     # MAF filter (HARD) - minimum minor allele frequency
-    # 1/612 = 0.00163 (at least 1 allele in 306 diploid samples)
-    MIN_AF: float = 0.0016
+    # 1/(504*2)
+    MIN_AF: float = 1 / (504 * 2)
 
     # Call rate filter (HARD) - minimum genotyping completeness
     MIN_CALL_RATE: float = 0.95
@@ -250,7 +258,7 @@ class Plink2Config:
     """PLINK2 executable and common options."""
 
     EXECUTABLE: str = "plink2"
-    THREADS: int = 8
+    THREADS: int = 16
     MEMORY_MB: int = 16000  # 16GB
 
 

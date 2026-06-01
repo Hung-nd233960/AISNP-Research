@@ -30,7 +30,7 @@ scripts/part2/
 ├── ml_comparison.py      # ML model comparison utilities
 └── README.md             # This file
 
-scripts/notebooks/part2/
+notebooks/part2/
 ├── 06_rsid_to_bed.ipynb         # Convert rsID lists to BED
 ├── 07_bed_to_ml_matrix.ipynb    # Extract genotypes, create ML matrices
 └── 08_known_aisnps_ml.ipynb     # ML comparison, confusion matrices, plots

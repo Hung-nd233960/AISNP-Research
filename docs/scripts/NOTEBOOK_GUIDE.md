@@ -62,7 +62,7 @@ If automatic setup doesn't work:
 cd /path/to/BioinfoMidterm
 
 # Then open notebook from here
-jupyter notebook scripts/notebooks/01_hard_filtering.ipynb
+jupyter notebook notebooks/01_hard_filtering.ipynb
 ```
 
 ### Verify Setup

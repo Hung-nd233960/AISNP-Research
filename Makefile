@@ -5,7 +5,7 @@
 
 CONDA_ENV  := aisnp
 PYTHON     := conda run -n $(CONDA_ENV) python3
-NB_DIR     := scripts/notebooks/sea_jpt_cn
+NB_DIR     := notebooks/sea_jpt_cn
 
 # Read genomes_data root from paths.yaml (or default)
 GENOMES    := $(shell python3 -c \

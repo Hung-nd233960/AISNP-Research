@@ -333,7 +333,7 @@ Despite this challenge, the selected AISNPs capture subtle frequency differences
 All analyses can be reproduced by running notebooks in order:
 
 ```bash
-cd scripts/notebooks/
+cd notebooks/
 jupyter notebook 01_hard_filtering.ipynb
 jupyter notebook 02_situational_filtering.ipynb
 jupyter notebook 02b_statistical_snp_selection.ipynb

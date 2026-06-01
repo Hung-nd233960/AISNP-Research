@@ -34,7 +34,7 @@ ls -la  # Verify: should see notebooks/, scripts/, 1000genomes/
 **Option A: Jupyter Notebook** (Interactive, Recommended)
 
 ```bash
-jupyter notebook scripts/notebooks/01_hard_filtering.ipynb
+jupyter notebook notebooks/01_hard_filtering.ipynb
 ```
 
 1. Click first cell (setup)
@@ -64,7 +64,7 @@ cd scripts
 **Jupyter Notebook:**
 
 ```bash
-jupyter notebook scripts/notebooks/02_situational_filtering.ipynb
+jupyter notebook notebooks/02_situational_filtering.ipynb
 ```
 
 **Command Line:**
@@ -88,13 +88,13 @@ Run analysis notebooks for visualizations:
 
 ```bash
 # PCA and FST
-jupyter notebook scripts/notebooks/03_fst_and_pca.ipynb
+jupyter notebook notebooks/03_fst_and_pca.ipynb
 
 # ML Training
-jupyter notebook scripts/notebooks/04_ml_training.ipynb
+jupyter notebook notebooks/04_ml_training.ipynb
 
 # Model Evaluation
-jupyter notebook scripts/notebooks/05_model_evaluation.ipynb
+jupyter notebook notebooks/05_model_evaluation.ipynb
 ```
 
 ---

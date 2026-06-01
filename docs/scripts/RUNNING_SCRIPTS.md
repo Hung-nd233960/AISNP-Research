@@ -10,7 +10,7 @@ Run notebooks sequentially in VS Code or Jupyter:
 
 ```bash
 cd /path/to/BioinfoMidterm
-jupyter notebook scripts/notebooks/
+jupyter notebook notebooks/
 ```
 
 **Execution order:**
@@ -332,7 +332,7 @@ plink2 --pfile input \
 
 ### Custom Configuration
 
-Edit `config.py` to change defaults for all scripts/notebooks:
+Edit `config.py` to change defaults for all notebooks:
 
 ```python
 # config.py

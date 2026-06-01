@@ -98,7 +98,7 @@ conda activate aisnp
 
 ```bash
 # Navigate to notebooks
-cd scripts/notebooks
+cd notebooks
 
 # Run in order:
 # 1. Hard filtering (quality control)

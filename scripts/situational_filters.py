@@ -23,16 +23,8 @@ import os
 from pathlib import Path
 from typing import Optional, List, Union
 
-# Import configuration and utilities
-try:
-    from config import PATHS, SITUATIONAL_FILTERS, PLINK
-    from utils import run_plink2_command, count_variants, count_samples
-except ImportError:
-    import sys
-
-    sys.path.insert(0, str(Path(__file__).parent))
-    from config import PATHS, SITUATIONAL_FILTERS, PLINK
-    from utils import run_plink2_command, count_variants, count_samples
+from config import PATHS, SITUATIONAL_FILTERS, PLINK
+from plink import run_plink2_command, count_variants, count_samples
 
 
 # =============================================================================

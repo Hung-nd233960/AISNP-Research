@@ -22,32 +22,11 @@ from typing import List, Tuple, Dict, Union, Optional
 import pandas as pd
 import numpy as np
 
-# Import configuration and utilities
-try:
-    from config import PATHS, SITUATIONAL_FILTERS, POPULATIONS
-    from utils import (
-        run_plink2_command,
-        run_bcftools_command,
-        analyze_fst,
-        merge_fst_top_variants,
-        variant_to_bed,
-        variants_to_bed_file,
-        ensure_dir,
-    )
-except ImportError:
-    import sys
-
-    sys.path.insert(0, str(Path(__file__).parent))
-    from config import PATHS, SITUATIONAL_FILTERS, POPULATIONS
-    from utils import (
-        run_plink2_command,
-        run_bcftools_command,
-        analyze_fst,
-        merge_fst_top_variants,
-        variant_to_bed,
-        variants_to_bed_file,
-        ensure_dir,
-    )
+from config import PATHS, SITUATIONAL_FILTERS, POPULATIONS
+from plink import run_plink2_command
+from vcf import run_bcftools_command
+from stats import analyze_fst, merge_fst_top_variants
+from fileio import variant_to_bed, variants_to_bed_file, ensure_dir
 
 
 # =============================================================================

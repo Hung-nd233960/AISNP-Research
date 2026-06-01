@@ -17,7 +17,7 @@ from pathlib import Path
 import pandas as pd
 
 import config as cfg
-from utils import read_panel
+from fileio import read_panel
 
 
 def create_population_samples(panel_file: Path) -> tuple[Path, Path]:

@@ -20,16 +20,8 @@ Rationale:
 from pathlib import Path
 from typing import Optional
 
-# Import configuration and utilities
-try:
-    from config import PATHS, HARD_FILTERS
-    from utils import run_plink2_command, count_variants, count_samples
-except ImportError:
-    import sys
-
-    sys.path.insert(0, str(Path(__file__).parent))
-    from config import PATHS, HARD_FILTERS
-    from utils import run_plink2_command, count_variants, count_samples
+from config import PATHS, HARD_FILTERS
+from plink import run_plink2_command, count_variants, count_samples
 
 
 # =============================================================================

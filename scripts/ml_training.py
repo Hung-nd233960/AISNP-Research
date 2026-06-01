@@ -40,16 +40,8 @@ try:
 except ImportError:
     HAS_XGBOOST = False
 
-# Import configuration
-try:
-    from config import PATHS, ML
-    from utils import ensure_dir, save_report
-except ImportError:
-    import sys
-
-    sys.path.insert(0, str(Path(__file__).parent))
-    from config import PATHS, ML
-    from utils import ensure_dir, save_report
+from config import PATHS, ML
+from fileio import ensure_dir, save_report
 
 
 # =============================================================================

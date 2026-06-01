@@ -1,6 +1,5 @@
 """
-Configuration module for bioinformatics analysis pipeline.
-Centralized settings for paths, thresholds, and parameters.
+Configuration module for the SEA-JPT-CN ancestry inference pipeline.
 
 Filter Categories:
 ==================
@@ -18,16 +17,15 @@ Filter Categories:
 
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Optional
 
 # Project root is two levels up from this file (scripts/config.py → project root)
-_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _load_path_roots() -> dict:
     """
     Load path roots from paths.local.yaml (gitignored) or paths.yaml.
-    Returns a dict with keys: genomes_data, output, reports.
     Falls back to hardcoded defaults if neither file exists.
     """
     defaults = {
@@ -36,7 +34,7 @@ def _load_path_roots() -> dict:
         "reports": "reports",
     }
     for candidate in ("paths.local.yaml", "paths.yaml"):
-        p = _PROJECT_ROOT / candidate
+        p = PROJECT_ROOT / candidate
         if p.exists():
             try:
                 import yaml  # type: ignore
@@ -53,50 +51,24 @@ _PATH_ROOTS = _load_path_roots()
 
 @dataclass
 class PathConfig:
-    """Path configuration for input/output directories.
-
-    Paths are dynamically generated based on the population configuration.
-    - khv_jpt_chb: Uses {genomes_data}/output/ directory
-    - sea_jpt_cn: Uses {genomes_data}/output_sea_jpt_cn/ directory
+    """Path configuration for the SEA-JPT-CN pipeline.
 
     Roots (genomes_data, output, reports) are read from paths.local.yaml or
-    paths.yaml at the project root; see those files to change data locations.
+    paths.yaml at the project root; edit those files to change data locations.
     """
 
-    # Configuration name (determines output directory)
-    config_name: str = "khv_jpt_chb"
+    ROOT: Path = field(default_factory=lambda: PROJECT_ROOT)
 
-    # Project root (auto-detected from this file's location)
-    ROOT: Path = field(default_factory=lambda: _PROJECT_ROOT)
-
-    # Configurable roots — loaded from paths.yaml / paths.local.yaml
     _genomes_data: str = field(default_factory=lambda: _PATH_ROOTS["genomes_data"])
     _output_root: str = field(default_factory=lambda: _PATH_ROOTS["output"])
     _reports_root: str = field(default_factory=lambda: _PATH_ROOTS["reports"])
 
     def __post_init__(self):
-        # Input data (shared between configs)
-        # PLINK_MERGED: merged pgen prefix created by vcf_preprocessing.sh (no extension)
         self.PLINK_MERGED = Path(f"{self._genomes_data}/plink/allchr")
-        # VCF_FILE: merged VCF (only needed for bcftools operations in notebook 04)
         self.VCF_FILE = Path(f"{self._genomes_data}/main_vcf/ALL_merged.vcf.gz")
         self.PANEL_FILE = Path(
             f"{self._genomes_data}/integrated_call_samples_v3.20130502.ALL.panel"
         )
-
-    @property
-    def _prefix(self) -> str:
-        if self.config_name == "khv_jpt_chb":
-            return "EAS"
-        else:
-            return "SEA_JPT_CN"
-
-    @property
-    def _output_subdir(self) -> str:
-        if self.config_name == "khv_jpt_chb":
-            return "output"
-        else:
-            return "output_sea_jpt_cn"
 
     @property
     def DATA_DIR(self) -> Path:
@@ -104,401 +76,187 @@ class PathConfig:
 
     @property
     def OUTPUT_DIR(self) -> Path:
-        return Path(f"{self._genomes_data}/{self._output_subdir}")
+        return Path(f"{self._genomes_data}/output_sea_jpt_cn")
 
     @property
     def VCF_DIR(self) -> Path:
-        return Path(f"{self._genomes_data}/vcf_{self.config_name}")
+        return Path(f"{self._genomes_data}/vcf_sea_jpt_cn")
 
     @property
     def REPORTS_DIR(self) -> Path:
-        return Path(f"{self._reports_root}/{self.config_name}")
-
-    # Sample lists
-    @property
-    def EAS_SAMPLES_CSV(self) -> Path:
-        return Path(f"{self._genomes_data}/{self._prefix}_subpopulation_samples.csv")
+        return Path(f"{self._reports_root}/sea_jpt_cn")
 
     @property
-    def EAS_SAMPLES_LIST(self) -> Path:
-        return Path(f"{self._genomes_data}/{self._prefix}_subpopulation_samples_list.csv")
+    def SAMPLES_CSV(self) -> Path:
+        return Path(f"{self._genomes_data}/SEA_JPT_CN_subpopulation_samples.csv")
 
-    # Intermediate outputs - Hard filtered
+    @property
+    def SAMPLES_LIST(self) -> Path:
+        return Path(f"{self._genomes_data}/SEA_JPT_CN_subpopulation_samples_list.csv")
+
+    # Intermediate outputs — hard filtered
     @property
     def PLINK_SNP_FILTERED(self) -> Path:
-        return Path(
-            f"{self._genomes_data}/{self._output_subdir}/{self._prefix}_AND_SNP_filtered_data"
-        )
+        return Path(f"{self._genomes_data}/output_sea_jpt_cn/SEA_JPT_CN_AND_SNP_filtered_data")
 
     @property
     def PLINK_MAF_FILTERED(self) -> Path:
-        return Path(
-            f"{self._genomes_data}/{self._output_subdir}/{self._prefix}_AND_SNP_filtered_data_MAF_filtered"
-        )
+        return Path(f"{self._genomes_data}/output_sea_jpt_cn/SEA_JPT_CN_AND_SNP_filtered_data_MAF_filtered")
 
-    # Intermediate outputs - Situational filtered
+    # Intermediate outputs — situational filtered
     @property
     def PLINK_HWE_FILTERED(self) -> Path:
-        return Path(
-            f"{self._genomes_data}/{self._output_subdir}/{self._prefix}_SNP_MAF_HWE_filtered"
-        )
+        return Path(f"{self._genomes_data}/output_sea_jpt_cn/SEA_JPT_CN_SNP_MAF_HWE_filtered")
 
     @property
     def PLINK_UNIQUE_IDS(self) -> Path:
-        return Path(
-            f"{self._genomes_data}/{self._output_subdir}/{self._prefix}_SNP_MAF_HWE_filtered_unique_ids"
-        )
+        return Path(f"{self._genomes_data}/output_sea_jpt_cn/SEA_JPT_CN_SNP_MAF_HWE_filtered_unique_ids")
 
     @property
     def PLINK_LD_PRUNED(self) -> Path:
-        return Path(
-            f"{self._genomes_data}/{self._output_subdir}/{self._prefix}_FINAL_DATA_FOR_FST"
-        )
+        return Path(f"{self._genomes_data}/output_sea_jpt_cn/SEA_JPT_CN_FINAL_DATA_FOR_FST")
 
     # FST and SNP selection
     @property
     def FST_RESULTS(self) -> Path:
-        return Path(
-            f"{self._genomes_data}/{self._output_subdir}/{self._prefix}_FST_RESULTS"
-        )
+        return Path(f"{self._genomes_data}/output_sea_jpt_cn/SEA_JPT_CN_FST_RESULTS")
 
     @property
     def TOP_SNPS_FILE(self) -> Path:
-        return Path(f"{self._genomes_data}/{self._output_subdir}/top_snps.txt")
+        return Path(f"{self._genomes_data}/output_sea_jpt_cn/top_snps.txt")
 
     @property
     def TOP_SNPS_BED(self) -> Path:
-        return Path(f"{self._genomes_data}/{self._output_subdir}/top_snps.bed")
+        return Path(f"{self._genomes_data}/output_sea_jpt_cn/top_snps.bed")
 
     @property
     def FST_FILTERED(self) -> Path:
-        return Path(f"{self._genomes_data}/{self._output_subdir}/FST_FILTERED")
+        return Path(f"{self._genomes_data}/output_sea_jpt_cn/FST_FILTERED")
 
-    # PCA outputs
     @property
     def PCA_FILE(self) -> Path:
-        return Path(f"{self._genomes_data}/{self._output_subdir}/FST_PCA")
+        return Path(f"{self._genomes_data}/output_sea_jpt_cn/FST_PCA")
 
-    # ML data
     @property
     def ML_DATA(self) -> Path:
-        return Path(
-            f"{self._genomes_data}/vcf_{self.config_name}/vcf_numeric_transposed_with_population.csv"
-        )
+        return Path(f"{self._genomes_data}/vcf_sea_jpt_cn/vcf_numeric_transposed_with_population.csv")
 
     @property
     def ML_MODELS_DIR(self) -> Path:
-        return Path(f"{self._output_root}/ml_models/{self.config_name}")
+        return Path(f"{self._output_root}/ml_models/sea_jpt_cn")
 
     def get_absolute(self, relative_path: Path) -> Path:
-        """Convert relative path to absolute."""
         return self.ROOT / relative_path
 
     def ensure_output_dirs(self) -> None:
-        """Create output directories if they don't exist."""
-        dirs_to_create = [
-            self.OUTPUT_DIR,
-            self.VCF_DIR,
-            self.REPORTS_DIR,
-            self.ML_MODELS_DIR,
-        ]
-        for dir_path in dirs_to_create:
-            abs_path = self.get_absolute(dir_path)
-            abs_path.mkdir(parents=True, exist_ok=True)
-
-
-def get_path_config(config_name: str = "khv_jpt_chb") -> PathConfig:
-    """
-    Get path configuration for a specific population config.
-
-    Args:
-        config_name: One of "khv_jpt_chb" or "sea_jpt_cn"
-
-    Returns:
-        PathConfig instance with appropriate paths
-    """
-    valid_configs = ["khv_jpt_chb", "sea_jpt_cn"]
-    if config_name not in valid_configs:
-        raise ValueError(f"Unknown config: {config_name}. Available: {valid_configs}")
-    return PathConfig(config_name=config_name)
+        for dir_path in [self.OUTPUT_DIR, self.VCF_DIR, self.REPORTS_DIR, self.ML_MODELS_DIR]:
+            self.get_absolute(dir_path).mkdir(parents=True, exist_ok=True)
 
 
 @dataclass(frozen=True)
 class HardFilterThresholds:
-    """
-    HARD FILTERS: Strict quality control parameters.
-    These should be applied consistently across all datasets.
+    """HARD FILTERS: applied consistently across all datasets."""
 
-    Rationale:
-    - SNP_ONLY: Focus on single nucleotide polymorphisms for ancestry inference
-    - MAX_ALLELES: Biallelic variants are more reliable and interpretable
-    - MIN_AF: Remove singletons/doubletons (1/612 alleles for 306 samples)
-    - MIN_CALL_RATE: Ensure high genotyping quality
-    """
-
-    # SNP-only filter (HARD) - removes indels, CNVs, structural variants
     SNP_ONLY: bool = True
-
-    # Biallelic filter (HARD) - maximum number of alleles
     MAX_ALLELES: int = 2
-
-    # MAF filter (HARD) - minimum minor allele frequency
-    # 1/(504*2)
+    # 1/(504*2) — one allele across all 504 samples
     MIN_AF: float = 1 / (504 * 2)
-
-    # Call rate filter (HARD) - minimum genotyping completeness
     MIN_CALL_RATE: float = 0.95
-
-    # Minimum observed count (for frequency analysis)
     MIN_OBS_CT: int = 1
 
 
 @dataclass(frozen=True)
 class SituationalFilterThresholds:
-    """
-    SITUATIONAL FILTERS: Context-dependent parameters.
-    These may vary based on study design, research questions, and populations.
+    """SITUATIONAL FILTERS: context-dependent, vary by study design."""
 
-    Rationale:
-    - HWE: Removes genotyping errors, but strict filtering may remove
-           variants under selection (context-dependent)
-    - LD: Reduces redundancy for PCA/ancestry analysis, but keeps
-           all info for association studies
-    - FST: Selects population-informative variants for ancestry inference
-    """
-
-    # Hardy-Weinberg Equilibrium (SITUATIONAL)
-    # More relaxed threshold (1e-6) for population genetics
-    # Stricter threshold (1e-10) for GWAS
+    # More relaxed (1e-6) for population genetics; stricter (1e-10) for GWAS
     HWE_P_THRESHOLD: float = 1e-6
-    HWE_FILTER_MODE: str = "keep-fewhet"  # Options: "keep-fewhet", "keep-all", None
+    HWE_FILTER_MODE: str = "keep-fewhet"
 
-    # LD pruning parameters (SITUATIONAL)
-    # Aggressive for PCA: window=1000kb, step=1, r2=0.1
-    # Moderate for ancestry: window=500kb, step=5, r2=0.2
-    # Light for association: window=50kb, step=5, r2=0.5
+    # Aggressive LD pruning for PCA/ancestry
     LD_WINDOW_KB: int = 1000
     LD_STEP: int = 1
     LD_R2_THRESHOLD: float = 0.1
 
-    # FST selection (SITUATIONAL)
-    # Top N variants per population pair
     FST_TOP_N: int = 1000
-    FST_MIN_VALUE: float = 0.0  # Minimum FST to consider
+    FST_MIN_VALUE: float = 0.0
 
 
 @dataclass(frozen=True)
 class Plink2Config:
-    """PLINK2 executable and common options."""
-
     EXECUTABLE: str = "plink2"
     THREADS: int = 16
-    MEMORY_MB: int = 16000  # 16GB
+    MEMORY_MB: int = 16000
 
 
 @dataclass(frozen=True)
 class PopulationConfig:
-    """Population definitions for the study."""
+    """SEA-JPT-CN: 5 raw 1000 Genomes populations merged into 3 groups.
 
-    # Configuration name
-    CONFIG_NAME: str = "khv_jpt_chb"
+    Raw: CHB, JPT, CHS, CDX, KHV
+    Merged:
+      CN  = CHB + CHS (Han Chinese)
+      JPT = JPT       (Japanese)
+      SEA = KHV + CDX (Southeast Asian)
+    """
 
-    # Super population
     SUPER_POP: str = "EAS"
-
-    # East Asian subpopulations in the raw data
-    RAW_SUBPOPS: tuple = ("CHB", "JPT", "KHV")
-
-    # Target populations after any merging (same as RAW for khv_jpt_chb)
-    TARGET_POPS: tuple = ("CHB", "JPT", "KHV")
-
-    # Population merge mapping (empty dict means no merging)
-    # Format: {raw_pop: merged_group}
-    POP_MERGE_MAP: dict = field(default_factory=dict)
-
-    # Number of samples (for frequency calculations)
-    NUM_SAMPLES: int = 306
-
-    @property
-    def EAS_SUBPOPS(self) -> tuple:
-        """Backward compatibility alias for TARGET_POPS."""
-        return self.TARGET_POPS
-
-
-# =============================================================================
-# Predefined Population Configurations
-# =============================================================================
-
-
-def get_khv_jpt_chb_config() -> PopulationConfig:
-    """
-    KHV-JPT-CHB configuration: 3 populations, no merging.
-    Uses: KHV, JPT, CHB
-    """
-    return PopulationConfig(
-        CONFIG_NAME="khv_jpt_chb",
-        SUPER_POP="EAS",
-        RAW_SUBPOPS=("CHB", "JPT", "KHV"),
-        TARGET_POPS=("CHB", "JPT", "KHV"),
-        POP_MERGE_MAP={},
-        NUM_SAMPLES=306,
-    )
-
-
-def get_sea_jpt_cn_config() -> PopulationConfig:
-    """
-    SEA-JPT-CN configuration: 5 raw populations merged into 3 groups.
-    Raw populations: CHB, JPT, CHS, CDX, KHV
-    Merged groups:
-      - CN: CHB + CHS (Han Chinese)
-      - SEA: KHV + CDX (Southeast Asian)
-      - JPT: JPT (Japanese)
-    """
-    return PopulationConfig(
-        CONFIG_NAME="sea_jpt_cn",
-        SUPER_POP="EAS",
-        RAW_SUBPOPS=("CHB", "JPT", "CHS", "CDX", "KHV"),
-        TARGET_POPS=("CN", "JPT", "SEA"),
-        POP_MERGE_MAP={
-            "CHB": "CN",
-            "CHS": "CN",
-            "JPT": "JPT",
-            "KHV": "SEA",
-            "CDX": "SEA",
-        },
-        NUM_SAMPLES=504,  # All 5 EAS subpopulations
-    )
-
-
-def get_population_config(config_name: str = "khv_jpt_chb") -> PopulationConfig:
-    """
-    Get population configuration by name.
-
-    Args:
-        config_name: One of "khv_jpt_chb" or "sea_jpt_cn"
-
-    Returns:
-        PopulationConfig instance
-    """
-    configs = {
-        "khv_jpt_chb": get_khv_jpt_chb_config,
-        "sea_jpt_cn": get_sea_jpt_cn_config,
-    }
-
-    if config_name not in configs:
-        raise ValueError(
-            f"Unknown population config: {config_name}. "
-            f"Available: {list(configs.keys())}"
-        )
-
-    return configs[config_name]()
+    RAW_SUBPOPS: tuple = ("CHB", "JPT", "CHS", "CDX", "KHV")
+    TARGET_POPS: tuple = ("CN", "JPT", "SEA")
+    POP_MERGE_MAP: dict = field(default_factory=lambda: {
+        "CHB": "CN", "CHS": "CN",
+        "JPT": "JPT",
+        "KHV": "SEA", "CDX": "SEA",
+    })
+    NUM_SAMPLES: int = 504
 
 
 @dataclass(frozen=True)
 class MLConfig:
-    """Machine learning configuration."""
-
-    # Data splits
     TEST_SIZE: float = 0.2
     RANDOM_STATE: int = 42
-
-    # Cross-validation
     CV_FOLDS: int = 5
 
-    # Random Forest hyperparameters
     RF_N_ESTIMATORS: int = 200
     RF_MAX_DEPTH: Optional[int] = None
     RF_MIN_SAMPLES_SPLIT: int = 2
     RF_MIN_SAMPLES_LEAF: int = 1
 
-    # XGBoost hyperparameters
     XGB_N_ESTIMATORS: int = 200
     XGB_MAX_DEPTH: int = 6
     XGB_LEARNING_RATE: float = 0.1
     XGB_SUBSAMPLE: float = 0.8
 
-    # Logistic Regression
     LR_MAX_ITER: int = 1000
     LR_SOLVER: str = "lbfgs"
 
-    # Feature selection
     TOP_N_FEATURES: int = 25
 
 
-# =============================================================================
-# Global configuration instances
-# =============================================================================
+# ---------------------------------------------------------------------------
+# Module-level constants — import these directly, no setter needed
+# ---------------------------------------------------------------------------
 
-# Default config name
-_CURRENT_CONFIG_NAME = "khv_jpt_chb"
-
-PATHS = get_path_config(_CURRENT_CONFIG_NAME)
+PATHS = PathConfig()
 HARD_FILTERS = HardFilterThresholds()
 SITUATIONAL_FILTERS = SituationalFilterThresholds()
 PLINK = Plink2Config()
-
-# Default population config - can be changed by calling set_population_config()
-POPULATIONS = get_khv_jpt_chb_config()
+POPULATIONS = PopulationConfig()
 ML = MLConfig()
 
 
-def set_population_config(config_name: str) -> None:
-    """
-    Set the global population and path configuration.
-
-    Args:
-        config_name: One of "khv_jpt_chb" or "sea_jpt_cn"
-
-    This updates both POPULATIONS and PATHS global variables.
-    """
-    global POPULATIONS, PATHS, _CURRENT_CONFIG_NAME
-    _CURRENT_CONFIG_NAME = config_name
-    POPULATIONS = get_population_config(config_name)
-    PATHS = get_path_config(config_name)
-
-    # Ensure output directories exist
-    PATHS.ensure_output_dirs()
-
-
-def get_current_config_name() -> str:
-    """Get the current configuration name."""
-    return _CURRENT_CONFIG_NAME
-
-
-def print_config_summary():
-    """Print a summary of current configuration."""
+def print_config_summary() -> None:
     print("=" * 60)
-    print("CONFIGURATION SUMMARY")
+    print("CONFIGURATION SUMMARY  (sea_jpt_cn)")
     print("=" * 60)
-
-    print("\n--- PATHS ---")
-    print(f"  Config name:    {PATHS.config_name}")
-    print(f"  Output dir:     {PATHS.OUTPUT_DIR}")
-    print(f"  VCF dir:        {PATHS.VCF_DIR}")
-    print(f"  Samples CSV:    {PATHS.EAS_SAMPLES_CSV}")
-
-    print("\n--- HARD FILTERS (Always Applied) ---")
-    print(f"  SNP-only:      {HARD_FILTERS.SNP_ONLY}")
-    print(f"  Max alleles:   {HARD_FILTERS.MAX_ALLELES}")
-    print(f"  Min AF:        {HARD_FILTERS.MIN_AF}")
-    print(f"  Min call rate: {HARD_FILTERS.MIN_CALL_RATE}")
-
-    print("\n--- SITUATIONAL FILTERS (Context-Dependent) ---")
-    print(f"  HWE threshold: {SITUATIONAL_FILTERS.HWE_P_THRESHOLD}")
-    print(f"  HWE mode:      {SITUATIONAL_FILTERS.HWE_FILTER_MODE}")
-    print(f"  LD window:     {SITUATIONAL_FILTERS.LD_WINDOW_KB}kb")
-    print(f"  LD step:       {SITUATIONAL_FILTERS.LD_STEP}")
-    print(f"  LD R² cutoff:  {SITUATIONAL_FILTERS.LD_R2_THRESHOLD}")
-    print(f"  FST top N:     {SITUATIONAL_FILTERS.FST_TOP_N}")
-
-    print("\n--- POPULATIONS ---")
-    print(f"  Config name:    {POPULATIONS.CONFIG_NAME}")
-    print(f"  Raw subpops:    {POPULATIONS.RAW_SUBPOPS}")
-    print(f"  Target pops:    {POPULATIONS.TARGET_POPS}")
-    if POPULATIONS.POP_MERGE_MAP:
-        print(f"  Merge mapping:  {POPULATIONS.POP_MERGE_MAP}")
-    print(f"  Num samples:    {POPULATIONS.NUM_SAMPLES}")
-
+    print(f"\n  genomes_data:  {PATHS._genomes_data}")
+    print(f"  output root:   {PATHS._output_root}")
+    print(f"  OUTPUT_DIR:    {PATHS.OUTPUT_DIR}")
+    print(f"  ML_MODELS_DIR: {PATHS.ML_MODELS_DIR}")
+    print(f"\n  Hard filters:  MAF≥{HARD_FILTERS.MIN_AF:.4f}  call_rate≥{HARD_FILTERS.MIN_CALL_RATE}")
+    print(f"  LD pruning:    {SITUATIONAL_FILTERS.LD_WINDOW_KB}kb / r²<{SITUATIONAL_FILTERS.LD_R2_THRESHOLD}")
+    print(f"  FST top-N:     {SITUATIONAL_FILTERS.FST_TOP_N}")
+    print(f"\n  Populations:   {POPULATIONS.TARGET_POPS}  (n={POPULATIONS.NUM_SAMPLES})")
     print("=" * 60)
 
 

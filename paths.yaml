@@ -1,0 +1,17 @@
+# Path roots for the AISNP Research pipeline.
+#
+# To override for your local machine, copy this file to paths.local.yaml
+# and edit it there. paths.local.yaml is gitignored and will take precedence.
+#
+# All values may be absolute (/mnt/storage/1000genomes) or relative to the
+# project root (the folder containing this file).
+
+# Root of the 1000 Genomes dataset: raw VCFs, PLINK files, panel file,
+# and all intermediate pipeline outputs.
+genomes_data: data/1000genomes
+
+# Root for final outputs such as ML models and graphs.
+output: output
+
+# Root for analysis reports.
+reports: reports

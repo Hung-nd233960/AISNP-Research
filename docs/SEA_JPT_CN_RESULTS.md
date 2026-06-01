@@ -1,4 +1,4 @@
-# SEA-JPT-CN Population Analysis Results
+SEA-JPT-CN Population Analysis Results
 
 Comprehensive analysis results for distinguishing Chinese (CN), Japanese (JPT), and Southeast Asian (SEA) populations using Ancestry-Informative SNPs.
 

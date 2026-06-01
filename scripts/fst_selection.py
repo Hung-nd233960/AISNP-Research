@@ -86,9 +86,10 @@ def add_population_to_psam(
     # Read psam file
     psam_df = pd.read_csv(psam_path, sep="\t")
 
-    # Remove SEX column if present (we'll add pop instead)
-    if "SEX" in psam_df.columns:
-        psam_df = psam_df.drop(columns=["SEX"])
+    # Remove SEX and any existing pop column (we'll re-add pop from samples_csv)
+    drop_cols = [c for c in ["SEX", "pop"] if c in psam_df.columns]
+    if drop_cols:
+        psam_df = psam_df.drop(columns=drop_cols)
 
     # Remove super_pop from samples (keep only pop)
     samples_df = samples_df[["sample", "pop"]]

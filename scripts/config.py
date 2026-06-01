@@ -24,13 +24,43 @@ from typing import Optional, List
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
+def _load_path_roots() -> dict:
+    """
+    Load path roots from paths.local.yaml (gitignored) or paths.yaml.
+    Returns a dict with keys: genomes_data, output, reports.
+    Falls back to hardcoded defaults if neither file exists.
+    """
+    defaults = {
+        "genomes_data": "data/1000genomes",
+        "output": "output",
+        "reports": "reports",
+    }
+    for candidate in ("paths.local.yaml", "paths.yaml"):
+        p = _PROJECT_ROOT / candidate
+        if p.exists():
+            try:
+                import yaml  # type: ignore
+                with open(p) as f:
+                    data = yaml.safe_load(f) or {}
+                return {**defaults, **{k: v for k, v in data.items() if k in defaults}}
+            except Exception:
+                pass
+    return defaults
+
+
+_PATH_ROOTS = _load_path_roots()
+
+
 @dataclass
 class PathConfig:
     """Path configuration for input/output directories.
 
     Paths are dynamically generated based on the population configuration.
-    - khv_jpt_chb: Uses data/1000genomes/output/ directory
-    - sea_jpt_cn: Uses data/1000genomes/output_sea_jpt_cn/ directory
+    - khv_jpt_chb: Uses {genomes_data}/output/ directory
+    - sea_jpt_cn: Uses {genomes_data}/output_sea_jpt_cn/ directory
+
+    Roots (genomes_data, output, reports) are read from paths.local.yaml or
+    paths.yaml at the project root; see those files to change data locations.
     """
 
     # Configuration name (determines output directory)
@@ -39,18 +69,23 @@ class PathConfig:
     # Project root (auto-detected from this file's location)
     ROOT: Path = field(default_factory=lambda: _PROJECT_ROOT)
 
-    # Input data (shared between configs)
-    # PLINK_MERGED: merged pgen prefix created by vcf_preprocessing.sh (no extension)
-    PLINK_MERGED: Path = Path("data/1000genomes/plink/allchr")
-    # VCF_FILE: merged VCF (only needed for bcftools operations in notebook 04)
-    VCF_FILE: Path = Path("data/1000genomes/main_vcf/ALL_merged.vcf.gz")
-    PANEL_FILE: Path = Path(
-        "data/1000genomes/integrated_call_samples_v3.20130502.ALL.panel"
-    )
+    # Configurable roots — loaded from paths.yaml / paths.local.yaml
+    _genomes_data: str = field(default_factory=lambda: _PATH_ROOTS["genomes_data"])
+    _output_root: str = field(default_factory=lambda: _PATH_ROOTS["output"])
+    _reports_root: str = field(default_factory=lambda: _PATH_ROOTS["reports"])
+
+    def __post_init__(self):
+        # Input data (shared between configs)
+        # PLINK_MERGED: merged pgen prefix created by vcf_preprocessing.sh (no extension)
+        self.PLINK_MERGED = Path(f"{self._genomes_data}/plink/allchr")
+        # VCF_FILE: merged VCF (only needed for bcftools operations in notebook 04)
+        self.VCF_FILE = Path(f"{self._genomes_data}/main_vcf/ALL_merged.vcf.gz")
+        self.PANEL_FILE = Path(
+            f"{self._genomes_data}/integrated_call_samples_v3.20130502.ALL.panel"
+        )
 
     @property
     def _prefix(self) -> str:
-        """Get the prefix for output files based on config."""
         if self.config_name == "khv_jpt_chb":
             return "EAS"
         else:
@@ -58,7 +93,6 @@ class PathConfig:
 
     @property
     def _output_subdir(self) -> str:
-        """Get the output subdirectory based on config."""
         if self.config_name == "khv_jpt_chb":
             return "output"
         else:
@@ -66,95 +100,95 @@ class PathConfig:
 
     @property
     def DATA_DIR(self) -> Path:
-        return Path("data/1000genomes")
+        return Path(self._genomes_data)
 
     @property
     def OUTPUT_DIR(self) -> Path:
-        return Path(f"data/1000genomes/{self._output_subdir}")
+        return Path(f"{self._genomes_data}/{self._output_subdir}")
 
     @property
     def VCF_DIR(self) -> Path:
-        return Path(f"data/1000genomes/vcf_{self.config_name}")
+        return Path(f"{self._genomes_data}/vcf_{self.config_name}")
 
     @property
     def REPORTS_DIR(self) -> Path:
-        return Path(f"reports/{self.config_name}")
+        return Path(f"{self._reports_root}/{self.config_name}")
 
     # Sample lists
     @property
     def EAS_SAMPLES_CSV(self) -> Path:
-        return Path(f"data/1000genomes/{self._prefix}_subpopulation_samples.csv")
+        return Path(f"{self._genomes_data}/{self._prefix}_subpopulation_samples.csv")
 
     @property
     def EAS_SAMPLES_LIST(self) -> Path:
-        return Path(f"data/1000genomes/{self._prefix}_subpopulation_samples_list.csv")
+        return Path(f"{self._genomes_data}/{self._prefix}_subpopulation_samples_list.csv")
 
     # Intermediate outputs - Hard filtered
     @property
     def PLINK_SNP_FILTERED(self) -> Path:
         return Path(
-            f"data/1000genomes/{self._output_subdir}/{self._prefix}_AND_SNP_filtered_data"
+            f"{self._genomes_data}/{self._output_subdir}/{self._prefix}_AND_SNP_filtered_data"
         )
 
     @property
     def PLINK_MAF_FILTERED(self) -> Path:
         return Path(
-            f"data/1000genomes/{self._output_subdir}/{self._prefix}_AND_SNP_filtered_data_MAF_filtered"
+            f"{self._genomes_data}/{self._output_subdir}/{self._prefix}_AND_SNP_filtered_data_MAF_filtered"
         )
 
     # Intermediate outputs - Situational filtered
     @property
     def PLINK_HWE_FILTERED(self) -> Path:
         return Path(
-            f"data/1000genomes/{self._output_subdir}/{self._prefix}_SNP_MAF_HWE_filtered"
+            f"{self._genomes_data}/{self._output_subdir}/{self._prefix}_SNP_MAF_HWE_filtered"
         )
 
     @property
     def PLINK_UNIQUE_IDS(self) -> Path:
         return Path(
-            f"data/1000genomes/{self._output_subdir}/{self._prefix}_SNP_MAF_HWE_filtered_unique_ids"
+            f"{self._genomes_data}/{self._output_subdir}/{self._prefix}_SNP_MAF_HWE_filtered_unique_ids"
         )
 
     @property
     def PLINK_LD_PRUNED(self) -> Path:
         return Path(
-            f"data/1000genomes/{self._output_subdir}/{self._prefix}_FINAL_DATA_FOR_FST"
+            f"{self._genomes_data}/{self._output_subdir}/{self._prefix}_FINAL_DATA_FOR_FST"
         )
 
     # FST and SNP selection
     @property
     def FST_RESULTS(self) -> Path:
         return Path(
-            f"data/1000genomes/{self._output_subdir}/{self._prefix}_FST_RESULTS"
+            f"{self._genomes_data}/{self._output_subdir}/{self._prefix}_FST_RESULTS"
         )
 
     @property
     def TOP_SNPS_FILE(self) -> Path:
-        return Path(f"data/1000genomes/{self._output_subdir}/top_snps.txt")
+        return Path(f"{self._genomes_data}/{self._output_subdir}/top_snps.txt")
 
     @property
     def TOP_SNPS_BED(self) -> Path:
-        return Path(f"data/1000genomes/{self._output_subdir}/top_snps.bed")
+        return Path(f"{self._genomes_data}/{self._output_subdir}/top_snps.bed")
 
     @property
     def FST_FILTERED(self) -> Path:
-        return Path(f"data/1000genomes/{self._output_subdir}/FST_FILTERED")
+        return Path(f"{self._genomes_data}/{self._output_subdir}/FST_FILTERED")
 
     # PCA outputs
     @property
     def PCA_FILE(self) -> Path:
-        return Path(f"data/1000genomes/{self._output_subdir}/FST_PCA")
+        return Path(f"{self._genomes_data}/{self._output_subdir}/FST_PCA")
 
     # ML data
     @property
     def ML_DATA(self) -> Path:
         return Path(
-            f"data/1000genomes/vcf_{self.config_name}/vcf_numeric_transposed_with_population.csv"
+            f"{self._genomes_data}/vcf_{self.config_name}/vcf_numeric_transposed_with_population.csv"
         )
 
     @property
     def ML_MODELS_DIR(self) -> Path:
-        return Path(f"output/ml_models/{self.config_name}")
+        return Path(f"{self._output_root}/ml_models/{self.config_name}")
 
     def get_absolute(self, relative_path: Path) -> Path:
         """Convert relative path to absolute."""

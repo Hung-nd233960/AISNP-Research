@@ -43,7 +43,9 @@ def setup(suppress_warnings: bool = True):
     if suppress_warnings:
         warnings.filterwarnings("ignore")
 
-    import config as cfg  # noqa: E402
+    import importlib
+    import config as cfg
+    importlib.reload(cfg)  # re-read paths.local.yaml and config.py on every setup() call
 
     print(f"Project root : {root}")
     print(f"genomes_data : {cfg.PATHS._genomes_data}")

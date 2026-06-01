@@ -137,6 +137,11 @@ class PathConfig:
     def PCA_FILE(self) -> Path:
         return Path(f"{self._genomes_data}/output_sea_jpt_cn/FST_PCA")
 
+    # Full LD-pruned genotype matrix (created by pre-filtering/03, read by statistical notebooks)
+    @property
+    def GENOTYPE_MATRIX(self) -> Path:
+        return Path(f"{self._genomes_data}/output_sea_jpt_cn/genotype_matrix_with_pop.csv")
+
     @property
     def ML_DATA(self) -> Path:
         return Path(f"{self._genomes_data}/vcf_sea_jpt_cn/vcf_numeric_transposed_with_population.csv")

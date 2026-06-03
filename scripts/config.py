@@ -193,35 +193,35 @@ class PathConfig:
         return self.outputs_dir("04a_statistical_snp_selection") / "statistical_all4_snps.csv"
 
     # ------------------------------------------------------------------
-    # fst/04b_fst_and_pca
+    # fst_only/04b_fst_and_pca
     # ------------------------------------------------------------------
 
     @property
     def FST_RESULTS(self) -> Path:
         """cache — raw .fst.var files from PLINK2."""
-        return self.cache_dir("fst/04b_fst_and_pca") / "SEA_JPT_CN_FST_RESULTS"
+        return self.cache_dir("fst_only/04b_fst_and_pca") / "SEA_JPT_CN_FST_RESULTS"
 
     @property
     def TOP_SNPS_FILE(self) -> Path:
-        return self.outputs_dir("fst/04b_fst_and_pca") / "top_snps.txt"
+        return self.outputs_dir("fst_only/04b_fst_and_pca") / "top_snps.txt"
 
     @property
     def TOP_SNPS_BED(self) -> Path:
-        return self.outputs_dir("fst/04b_fst_and_pca") / "top_snps.bed"
+        return self.outputs_dir("fst_only/04b_fst_and_pca") / "top_snps.bed"
 
     @property
     def FST_FILTERED(self) -> Path:
         """output — FST-selected pfile."""
-        return self.outputs_dir("fst/04b_fst_and_pca") / "FST_FILTERED"
+        return self.outputs_dir("fst_only/04b_fst_and_pca") / "FST_FILTERED"
 
     @property
     def PCA_FILE(self) -> Path:
-        return self.outputs_dir("fst/04b_fst_and_pca") / "FST_PCA"
+        return self.outputs_dir("fst_only/04b_fst_and_pca") / "FST_PCA"
 
     @property
     def ML_DATA(self) -> Path:
         """output — FST-filtered genotype matrix CSV (read by 05a, 05b, 06, 08b)."""
-        return self.outputs_dir("fst/04b_fst_and_pca") / "ml_data_with_pop.csv"
+        return self.outputs_dir("fst_only/04b_fst_and_pca") / "ml_data_with_pop.csv"
 
     # ------------------------------------------------------------------
     # 05a (statistical_only) / 05b (FST) / 05c (FST+stat)  ML training
@@ -267,11 +267,15 @@ class PathConfig:
             self.outputs_dir("02_situational_filtering"),
             self.outputs_dir("03_vcf_to_matrix"),
             self.outputs_dir("04a_statistical_snp_selection"),
-            self.cache_dir("fst/04b_fst_and_pca"),
-            self.outputs_dir("fst/04b_fst_and_pca"),
+            self.cache_dir("fst_only/04b_fst_and_pca"),
+            self.outputs_dir("fst_only/04b_fst_and_pca"),
             self.outputs_dir("statistical_v1/05a_stat_only_training"),
             self.outputs_dir("fst/05b_fst_only_training"),
             self.outputs_dir("statistical_v1/05c_fst_and_stat_training"),
+            self.outputs_dir("statistical_v2/04a_snp_selection"),
+            self.outputs_dir("statistical_v2/05a_stat_training"),
+            self.outputs_dir("statistical_v2/05b_reduction"),
+            self.outputs_dir("statistical_v2/05c_fst_stat_training"),
             self.outputs_dir("evaluation"),
             self.REPORTS_DIR,
         ]
@@ -379,13 +383,13 @@ def print_config_summary() -> None:
     print(f"\n  cache/")
     print(f"    01         : {PATHS.cache_dir('01_hard_filtering')}")
     print(f"    02         : {PATHS.cache_dir('02_situational_filtering')}")
-    print(f"    04         : {PATHS.cache_dir('fst/04b_fst_and_pca')}")
+    print(f"    04         : {PATHS.cache_dir('fst_only/04b_fst_and_pca')}")
     print(f"\n  outputs/")
     print(f"    01         : {PATHS.outputs_dir('01_hard_filtering')}")
     print(f"    02         : {PATHS.outputs_dir('02_situational_filtering')}")
     print(f"    03         : {PATHS.outputs_dir('03_vcf_to_matrix')}")
     print(f"    03b        : {PATHS.outputs_dir('04a_statistical_snp_selection')}")
-    print(f"    04         : {PATHS.outputs_dir('fst/04b_fst_and_pca')}")
+    print(f"    04         : {PATHS.outputs_dir('fst_only/04b_fst_and_pca')}")
     print(f"    05b FST    : {PATHS.ML_MODELS_FST}")
     print(f"    05c both   : {PATHS.ML_MODELS_BOTH}")
     print(f"    05a stat   : {PATHS.ML_MODELS_STAT}")

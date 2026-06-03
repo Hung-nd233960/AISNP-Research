@@ -12,7 +12,8 @@ GENOMES    := $(shell python3 -c \
   "import yaml; d=yaml.safe_load(open('paths.yaml')); print(d.get('genomes_data','data/1000genomes'))" \
   2>/dev/null || echo "data/1000genomes")
 
-OUTPUT     := $(GENOMES)/output_sea_jpt_cn
+CACHE      := $(GENOMES)/cache
+OUTPUTS    := $(GENOMES)/outputs
 
 # ---------------------------------------------------------------------------
 # Stamp files — touch these to mark a stage complete
@@ -23,10 +24,10 @@ $(STAMP_DIR):
 
 STAMP_PREFILTER := $(STAMP_DIR)/prefilter.done   # 01 + 02 + 03
 STAMP_FST       := $(STAMP_DIR)/04_fst.done
-STAMP_STAT      := $(STAMP_DIR)/03b_stat.done
-STAMP_ML_FST    := $(STAMP_DIR)/05a_ml_fst.done
-STAMP_ML_BOTH   := $(STAMP_DIR)/05b_ml_both.done
-STAMP_ML_STAT   := $(STAMP_DIR)/05c_ml_stat.done
+STAMP_STAT      := $(STAMP_DIR)/04a_stat.done
+STAMP_ML_FST    := $(STAMP_DIR)/05b_ml_fst.done
+STAMP_ML_BOTH   := $(STAMP_DIR)/05c_ml_both.done
+STAMP_ML_STAT   := $(STAMP_DIR)/05a_ml_stat.done
 STAMP_EVAL      := $(STAMP_DIR)/06_eval.done
 
 # ---------------------------------------------------------------------------
@@ -72,44 +73,41 @@ fst: $(STAMP_FST)
 $(STAMP_FST): $(STAMP_PREFILTER)
 	@echo "==> 04 FST selection and PCA..."
 	$(PYTHON) -m jupyter nbconvert --to notebook --execute \
-		--inplace $(NB_DIR)/04_fst_and_pca.ipynb
+		--inplace $(NB_DIR)/fst/04b_fst_and_pca.ipynb
 	touch $@
 
 # ---------------------------------------------------------------------------
-# Statistical path: 03b selection + 04b analysis
+# Statistical path: 04a selection
 # ---------------------------------------------------------------------------
 stat: $(STAMP_STAT)
 
 $(STAMP_STAT): $(STAMP_PREFILTER)
-	@echo "==> 03b Statistical SNP selection..."
+	@echo "==> 04a Statistical SNP selection..."
 	$(PYTHON) -m jupyter nbconvert --to notebook --execute \
-		--inplace $(NB_DIR)/03b_statistical_snp_selection.ipynb
-	@echo "==> 04b Statistical SNP analysis..."
-	$(PYTHON) -m jupyter nbconvert --to notebook --execute \
-		--inplace $(NB_DIR)/04b_statistical_snp_analysis.ipynb
+		--inplace $(NB_DIR)/statistical_v1/04a_snp_selection.ipynb
 	touch $@
 
 # ---------------------------------------------------------------------------
-# ML training: three variants (FST-only, FST+stat, stat-only)
+# ML training: three variants
 # ---------------------------------------------------------------------------
 ml: $(STAMP_ML_FST) $(STAMP_ML_BOTH) $(STAMP_ML_STAT)
 
 $(STAMP_ML_FST): $(STAMP_FST)
-	@echo "==> 05a ML training (FST-only)..."
+	@echo "==> 05b ML training (FST-only)..."
 	$(PYTHON) -m jupyter nbconvert --to notebook --execute \
-		--inplace $(NB_DIR)/05a_fst_only_training.ipynb
+		--inplace $(NB_DIR)/fst/05b_fst_only_training.ipynb
 	touch $@
 
 $(STAMP_ML_BOTH): $(STAMP_FST) $(STAMP_STAT)
-	@echo "==> 05b ML training (FST + statistical)..."
+	@echo "==> 05c ML training (FST + statistical)..."
 	$(PYTHON) -m jupyter nbconvert --to notebook --execute \
-		--inplace $(NB_DIR)/05b_fst_and_stat_training.ipynb
+		--inplace $(NB_DIR)/statistical_v1/05c_fst_and_stat_training.ipynb
 	touch $@
 
 $(STAMP_ML_STAT): $(STAMP_STAT)
-	@echo "==> 05c ML training (statistical-only)..."
+	@echo "==> 05a ML training (statistical-only)..."
 	$(PYTHON) -m jupyter nbconvert --to notebook --execute \
-		--inplace $(NB_DIR)/05c_stat_only_training.ipynb
+		--inplace $(NB_DIR)/statistical_v1/05a_stat_only_training.ipynb
 	touch $@
 
 # ---------------------------------------------------------------------------
@@ -133,5 +131,9 @@ clean-stamps:
 	@echo "Stamps cleared. Next 'make all' will re-run all stages."
 
 clean: clean-stamps
-	rm -rf $(OUTPUT)
-	@echo "Intermediates deleted."
+	rm -rf $(CACHE) $(OUTPUTS)
+	@echo "cache/ and outputs/ deleted."
+
+clean-cache: clean-stamps
+	rm -rf $(CACHE)
+	@echo "cache/ deleted (outputs preserved)."

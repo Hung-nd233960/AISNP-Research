@@ -38,7 +38,7 @@ def _load_path_roots() -> dict:
         if p.exists():
             try:
                 import yaml  # type: ignore
-                with open(p) as f:
+                with open(p, encoding="utf-8") as f:
                     data = yaml.safe_load(f) or {}
                 return {**defaults, **{k: v for k, v in data.items() if k in defaults}}
             except Exception:
@@ -53,8 +53,12 @@ _PATH_ROOTS = _load_path_roots()
 class PathConfig:
     """Path configuration for the SEA-JPT-CN pipeline.
 
-    Roots (genomes_data, output, reports) are read from paths.local.yaml or
-    paths.yaml at the project root; edit those files to change data locations.
+    Directory layout inside genomes_data:
+      raw_downloads/   downloaded 1000 Genomes files — never written by pipeline
+      cache/           intermediate PLINK/VCF files per notebook (01…)
+      outputs/         primary outputs per notebook (01…)
+
+    Roots are read from paths.local.yaml or paths.yaml at the project root.
     """
 
     ROOT: Path = field(default_factory=lambda: PROJECT_ROOT)
@@ -64,27 +68,42 @@ class PathConfig:
     _reports_root: str = field(default_factory=lambda: _PATH_ROOTS["reports"])
 
     def __post_init__(self):
+        # Raw inputs — never written by the pipeline
         self.PLINK_MERGED = Path(f"{self._genomes_data}/plink/allchr")
-        self.VCF_FILE = Path(f"{self._genomes_data}/main_vcf/ALL_merged.vcf.gz")
-        self.PANEL_FILE = Path(
-            f"{self._genomes_data}/integrated_call_samples_v3.20130502.ALL.panel"
-        )
+        self.VCF_FILE     = Path(f"{self._genomes_data}/main_vcf/ALL_merged.vcf.gz")
+        self.PANEL_FILE   = Path(f"{self._genomes_data}/raw_downloads/integrated_call_samples_v3.20130502.ALL.panel")
+
+    # ------------------------------------------------------------------
+    # Public accessors for the configured roots
+    # ------------------------------------------------------------------
+
+    @property
+    def genomes_data(self) -> str:
+        return self._genomes_data
+
+    @property
+    def output_root(self) -> str:
+        return self._output_root
+
+    # ------------------------------------------------------------------
+    # Directory helpers
+    # ------------------------------------------------------------------
+
+    def cache_dir(self, notebook: str) -> Path:
+        """Intermediate files for a notebook, e.g. PATHS.cache_dir('01_hard_filtering')."""
+        return Path(f"{self._genomes_data}/cache/{notebook}")
+
+    def outputs_dir(self, notebook: str) -> Path:
+        """Primary outputs for a notebook, e.g. PATHS.outputs_dir('02_situational_filtering')."""
+        return Path(f"{self._genomes_data}/outputs/{notebook}")
+
+    # ------------------------------------------------------------------
+    # Raw data
+    # ------------------------------------------------------------------
 
     @property
     def DATA_DIR(self) -> Path:
-        return Path(self._genomes_data)
-
-    @property
-    def OUTPUT_DIR(self) -> Path:
-        return Path(f"{self._genomes_data}/output_sea_jpt_cn")
-
-    @property
-    def VCF_DIR(self) -> Path:
-        return Path(f"{self._genomes_data}/vcf_sea_jpt_cn")
-
-    @property
-    def REPORTS_DIR(self) -> Path:
-        return Path(f"{self._reports_root}/sea_jpt_cn")
+        return Path(f"{self._genomes_data}/raw_downloads")
 
     @property
     def SAMPLES_CSV(self) -> Path:
@@ -94,68 +113,170 @@ class PathConfig:
     def SAMPLES_LIST(self) -> Path:
         return Path(f"{self._genomes_data}/SEA_JPT_CN_subpopulation_samples_list.csv")
 
-    # Intermediate outputs — hard filtered
+    # Backward-compat aliases
+    @property
+    def EAS_SAMPLES_CSV(self) -> Path:
+        return self.SAMPLES_CSV
+
+    @property
+    def EAS_SAMPLES_LIST(self) -> Path:
+        return self.SAMPLES_LIST
+
+    @property
+    def REPORTS_DIR(self) -> Path:
+        return Path(f"{self._reports_root}/sea_jpt_cn")
+
+    # ------------------------------------------------------------------
+    # 01_hard_filtering
+    # ------------------------------------------------------------------
+
     @property
     def PLINK_SNP_FILTERED(self) -> Path:
-        return Path(f"{self._genomes_data}/output_sea_jpt_cn/SEA_JPT_CN_AND_SNP_filtered_data")
+        """cache — SNP+biallelic filtered pfile (intermediate within 01)."""
+        return self.cache_dir("01_hard_filtering") / "SEA_JPT_CN_SNP_filtered"
 
     @property
     def PLINK_MAF_FILTERED(self) -> Path:
-        return Path(f"{self._genomes_data}/output_sea_jpt_cn/SEA_JPT_CN_AND_SNP_filtered_data_MAF_filtered")
+        """output — MAF-filtered pfile (final product of 01, input to 02)."""
+        return self.outputs_dir("01_hard_filtering") / "SEA_JPT_CN_MAF_filtered"
 
-    # Intermediate outputs — situational filtered
+    # ------------------------------------------------------------------
+    # 02_situational_filtering
+    # ------------------------------------------------------------------
+
     @property
     def PLINK_HWE_FILTERED(self) -> Path:
-        return Path(f"{self._genomes_data}/output_sea_jpt_cn/SEA_JPT_CN_SNP_MAF_HWE_filtered")
+        """cache — HWE-filtered pfile."""
+        return self.cache_dir("02_situational_filtering") / "SEA_JPT_CN_HWE_filtered"
 
     @property
     def PLINK_UNIQUE_IDS(self) -> Path:
-        return Path(f"{self._genomes_data}/output_sea_jpt_cn/SEA_JPT_CN_SNP_MAF_HWE_filtered_unique_ids")
+        """cache — variant-ID-standardised pfile."""
+        return self.cache_dir("02_situational_filtering") / "SEA_JPT_CN_unique_ids"
 
     @property
     def PLINK_LD_PRUNED(self) -> Path:
-        return Path(f"{self._genomes_data}/output_sea_jpt_cn/SEA_JPT_CN_FINAL_DATA_FOR_FST")
+        """output — LD-pruned pfile (final product of 02, input to 03+04)."""
+        return self.outputs_dir("02_situational_filtering") / "SEA_JPT_CN_LD_pruned"
 
-    # FST and SNP selection
+    # ------------------------------------------------------------------
+    # 03_vcf_to_matrix
+    # ------------------------------------------------------------------
+
+    @property
+    def GENOTYPE_MATRIX(self) -> Path:
+        """output — int8 genotype matrix, numpy .npz (arrays: G, samples)."""
+        return self.outputs_dir("03_vcf_to_matrix") / "genotype_matrix.npz"
+
+    @property
+    def GENOTYPE_MATRIX_COLS(self) -> Path:
+        """output — SNP IDs matching columns of GENOTYPE_MATRIX, one per line."""
+        return self.outputs_dir("03_vcf_to_matrix") / "genotype_matrix_cols.txt"
+
+    # ------------------------------------------------------------------
+    # 04a_statistical_snp_selection  (cross-notebook files named explicitly)
+    # ------------------------------------------------------------------
+
+    @property
+    def STAT_SCORES(self) -> Path:
+        """output — per-SNP statistical test scores (read by 05b, 05c, 08)."""
+        return self.outputs_dir("04a_statistical_snp_selection") / "statistical_snp_scores.csv"
+
+    @property
+    def STAT_ML_DATA(self) -> Path:
+        """output — stat-selected SNP genotype matrix (read by 05c, 08)."""
+        return self.outputs_dir("04a_statistical_snp_selection") / "statistical_ml_data.csv"
+
+    @property
+    def STAT_ALL4_SNPS(self) -> Path:
+        """output — SNPs significant in all 4 tests (read by 05b, 08b)."""
+        return self.outputs_dir("04a_statistical_snp_selection") / "statistical_all4_snps.csv"
+
+    # ------------------------------------------------------------------
+    # fst/04b_fst_and_pca
+    # ------------------------------------------------------------------
+
     @property
     def FST_RESULTS(self) -> Path:
-        return Path(f"{self._genomes_data}/output_sea_jpt_cn/SEA_JPT_CN_FST_RESULTS")
+        """cache — raw .fst.var files from PLINK2."""
+        return self.cache_dir("fst/04b_fst_and_pca") / "SEA_JPT_CN_FST_RESULTS"
 
     @property
     def TOP_SNPS_FILE(self) -> Path:
-        return Path(f"{self._genomes_data}/output_sea_jpt_cn/top_snps.txt")
+        return self.outputs_dir("fst/04b_fst_and_pca") / "top_snps.txt"
 
     @property
     def TOP_SNPS_BED(self) -> Path:
-        return Path(f"{self._genomes_data}/output_sea_jpt_cn/top_snps.bed")
+        return self.outputs_dir("fst/04b_fst_and_pca") / "top_snps.bed"
 
     @property
     def FST_FILTERED(self) -> Path:
-        return Path(f"{self._genomes_data}/output_sea_jpt_cn/FST_FILTERED")
+        """output — FST-selected pfile."""
+        return self.outputs_dir("fst/04b_fst_and_pca") / "FST_FILTERED"
 
     @property
     def PCA_FILE(self) -> Path:
-        return Path(f"{self._genomes_data}/output_sea_jpt_cn/FST_PCA")
-
-    # Full LD-pruned genotype matrix (created by pre-filtering/03, read by statistical notebooks)
-    @property
-    def GENOTYPE_MATRIX(self) -> Path:
-        return Path(f"{self._genomes_data}/output_sea_jpt_cn/genotype_matrix_with_pop.csv")
+        return self.outputs_dir("fst/04b_fst_and_pca") / "FST_PCA"
 
     @property
     def ML_DATA(self) -> Path:
-        return Path(f"{self._genomes_data}/vcf_sea_jpt_cn/vcf_numeric_transposed_with_population.csv")
+        """output — FST-filtered genotype matrix CSV (read by 05a, 05b, 06, 08b)."""
+        return self.outputs_dir("fst/04b_fst_and_pca") / "ml_data_with_pop.csv"
+
+    # ------------------------------------------------------------------
+    # 05a (statistical_only) / 05b (FST) / 05c (FST+stat)  ML training
+    # ------------------------------------------------------------------
+
+    @property
+    def ML_MODELS_STAT(self) -> Path:
+        return self.outputs_dir("statistical_v1/05a_stat_only_training")
+
+    @property
+    def ML_MODELS_FST(self) -> Path:
+        return self.outputs_dir("fst/05b_fst_only_training")
+
+    @property
+    def ML_MODELS_BOTH(self) -> Path:
+        return self.outputs_dir("statistical_v1/05c_fst_and_stat_training")
 
     @property
     def ML_MODELS_DIR(self) -> Path:
-        return Path(f"{self._output_root}/ml_models/sea_jpt_cn")
+        """Backward-compat alias → FST-only models dir."""
+        return self.ML_MODELS_FST
+
+    # ------------------------------------------------------------------
+    # evaluation/
+    # ------------------------------------------------------------------
+
+    @property
+    def EVAL_DIR(self) -> Path:
+        return self.outputs_dir("evaluation")
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
 
     def get_absolute(self, relative_path: Path) -> Path:
         return self.ROOT / relative_path
 
     def ensure_output_dirs(self) -> None:
-        for dir_path in [self.OUTPUT_DIR, self.VCF_DIR, self.REPORTS_DIR, self.ML_MODELS_DIR]:
-            self.get_absolute(dir_path).mkdir(parents=True, exist_ok=True)
+        dirs = [
+            self.cache_dir("01_hard_filtering"),
+            self.outputs_dir("01_hard_filtering"),
+            self.cache_dir("02_situational_filtering"),
+            self.outputs_dir("02_situational_filtering"),
+            self.outputs_dir("03_vcf_to_matrix"),
+            self.outputs_dir("04a_statistical_snp_selection"),
+            self.cache_dir("fst/04b_fst_and_pca"),
+            self.outputs_dir("fst/04b_fst_and_pca"),
+            self.outputs_dir("statistical_v1/05a_stat_only_training"),
+            self.outputs_dir("fst/05b_fst_only_training"),
+            self.outputs_dir("statistical_v1/05c_fst_and_stat_training"),
+            self.outputs_dir("evaluation"),
+            self.REPORTS_DIR,
+        ]
+        for d in dirs:
+            self.get_absolute(d).mkdir(parents=True, exist_ok=True)
 
 
 @dataclass(frozen=True)
@@ -254,14 +375,24 @@ def print_config_summary() -> None:
     print("=" * 60)
     print("CONFIGURATION SUMMARY  (sea_jpt_cn)")
     print("=" * 60)
-    print(f"\n  genomes_data:  {PATHS._genomes_data}")
-    print(f"  output root:   {PATHS._output_root}")
-    print(f"  OUTPUT_DIR:    {PATHS.OUTPUT_DIR}")
-    print(f"  ML_MODELS_DIR: {PATHS.ML_MODELS_DIR}")
-    print(f"\n  Hard filters:  MAF≥{HARD_FILTERS.MIN_AF:.4f}  call_rate≥{HARD_FILTERS.MIN_CALL_RATE}")
-    print(f"  LD pruning:    {SITUATIONAL_FILTERS.LD_WINDOW_KB}kb / r²<{SITUATIONAL_FILTERS.LD_R2_THRESHOLD}")
-    print(f"  FST top-N:     {SITUATIONAL_FILTERS.FST_TOP_N}")
-    print(f"\n  Populations:   {POPULATIONS.TARGET_POPS}  (n={POPULATIONS.NUM_SAMPLES})")
+    print(f"\n  genomes_data : {PATHS.genomes_data}")
+    print(f"\n  cache/")
+    print(f"    01         : {PATHS.cache_dir('01_hard_filtering')}")
+    print(f"    02         : {PATHS.cache_dir('02_situational_filtering')}")
+    print(f"    04         : {PATHS.cache_dir('fst/04b_fst_and_pca')}")
+    print(f"\n  outputs/")
+    print(f"    01         : {PATHS.outputs_dir('01_hard_filtering')}")
+    print(f"    02         : {PATHS.outputs_dir('02_situational_filtering')}")
+    print(f"    03         : {PATHS.outputs_dir('03_vcf_to_matrix')}")
+    print(f"    03b        : {PATHS.outputs_dir('04a_statistical_snp_selection')}")
+    print(f"    04         : {PATHS.outputs_dir('fst/04b_fst_and_pca')}")
+    print(f"    05b FST    : {PATHS.ML_MODELS_FST}")
+    print(f"    05c both   : {PATHS.ML_MODELS_BOTH}")
+    print(f"    05a stat   : {PATHS.ML_MODELS_STAT}")
+    print(f"\n  Hard filters : MAF≥{HARD_FILTERS.MIN_AF:.4f}  call_rate≥{HARD_FILTERS.MIN_CALL_RATE}")
+    print(f"  LD pruning   : {SITUATIONAL_FILTERS.LD_WINDOW_KB}kb / r²<{SITUATIONAL_FILTERS.LD_R2_THRESHOLD}")
+    print(f"  FST top-N    : {SITUATIONAL_FILTERS.FST_TOP_N}")
+    print(f"\n  Populations  : {POPULATIONS.TARGET_POPS}  (n={POPULATIONS.NUM_SAMPLES})")
     print("=" * 60)
 
 

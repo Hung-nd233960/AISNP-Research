@@ -84,6 +84,12 @@ def load_ml_data(
 
     X = df.drop(columns=drop_cols, errors="ignore")
     y = df[target_column]
+
+    # XGBoost forbids [ ] < in feature names (e.g. "12:58124[b37]C,G")
+    X.columns = [
+        c.replace("[", "_").replace("]", "_").replace("<", "_")
+        for c in X.columns
+    ]
     feature_names = X.columns.tolist()
 
     if verbose:

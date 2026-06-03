@@ -47,8 +47,10 @@ def setup(suppress_warnings: bool = True):
     import config as cfg
     importlib.reload(cfg)  # re-read paths.local.yaml and config.py on every setup() call
 
+    cfg.PATHS.ensure_output_dirs()
+
     print(f"Project root : {root}")
-    print(f"genomes_data : {cfg.PATHS._genomes_data}")
-    print(f"output root  : {cfg.PATHS._output_root}")
+    print(f"genomes_data : {cfg.PATHS.genomes_data}")
+    print(f"output root  : {cfg.PATHS.output_root}")
 
     return cfg, cfg.PATHS, cfg.POPULATIONS, cfg.HARD_FILTERS, cfg.SITUATIONAL_FILTERS, cfg.ML

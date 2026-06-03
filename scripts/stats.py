@@ -1,11 +1,131 @@
 """Statistical QC and FST analysis utilities (reads PLINK2 output files)."""
 
 import os
+from itertools import combinations
 from typing import Any, Dict, Tuple
 
+import numpy as np
 import pandas as pd
+from scipy.stats import chi2 as chi2_dist
+from sklearn.preprocessing import LabelEncoder
 
 from config import POPULATIONS
+
+
+def compute_snp_stats_vectorized(
+    genotype_df: pd.DataFrame,
+    populations: pd.Series,
+    verbose: bool = True,
+) -> pd.DataFrame:
+    """
+    Compute chi², mutual information, and KL divergence for every SNP at once.
+
+    Builds a (n_pops × n_genotypes × n_snps) contingency array in one pass using
+    matrix operations, then derives all three statistics from it — no Python loop
+    over SNPs.
+
+    Args:
+        genotype_df: DataFrame with columns ['sample','pop', snp1, snp2, ...]
+                     Genotype values: 0/1/2, missing encoded as -1.
+        populations:  Series of population labels aligned with genotype_df rows.
+
+    Returns:
+        DataFrame with columns: snp_id, chi2, chi2_pvalue,
+                                 mutual_information, kl_divergence
+    """
+    snp_cols = [c for c in genotype_df.columns if c not in ("sample", "pop")]
+    geno_matrix = genotype_df[snp_cols].to_numpy(dtype=np.int8)  # (n_samples, n_snps)
+    n_samples, n_snps = geno_matrix.shape
+
+    le = LabelEncoder()
+    pop_enc = le.fit_transform(populations.values)
+    n_pops = len(le.classes_)
+    n_genos = 3  # 0, 1, 2
+
+    if verbose:
+        print(f"Vectorised stats: {n_snps:,} SNPs × {n_samples} samples × "
+              f"{n_pops} populations")
+
+    # ------------------------------------------------------------------
+    # Build counts[p, g, snp] = # samples in population p with genotype g
+    # Subset rows first, then sum — avoids bool/int matmul accumulation bugs.
+    # numpy .sum(axis=0) on bool always accumulates in int64: safe, no overflow.
+    # ------------------------------------------------------------------
+    counts = np.zeros((n_pops, n_genos, n_snps), dtype=np.float32)
+    for p in range(n_pops):
+        pop_genos = geno_matrix[pop_enc == p]        # (n_i, n_snps) int8
+        for g in range(n_genos):
+            counts[p, g] = (pop_genos == g).sum(axis=0)
+
+    total = counts.sum(axis=(0, 1))                  # (n_snps,) — valid calls only
+
+    # ------------------------------------------------------------------
+    # Chi-squared (Pearson)
+    # ------------------------------------------------------------------
+    row_sums = counts.sum(axis=1)                    # (n_pops,  n_snps)
+    col_sums = counts.sum(axis=0)                    # (n_genos, n_snps)
+    expected = (
+        row_sums[:, np.newaxis, :]                   # (n_pops,  1,       n_snps)
+        * col_sums[np.newaxis, :, :]                 # (1,       n_genos, n_snps)
+        / np.maximum(total, 1)
+    )
+    with np.errstate(divide="ignore", invalid="ignore"):
+        chi2_stats = np.nansum(
+            np.where(expected > 0, (counts - expected) ** 2 / expected, 0.0),
+            axis=(0, 1),
+        )
+    dof = (n_pops - 1) * (n_genos - 1)
+    chi2_pvals = chi2_dist.sf(chi2_stats, df=dof)
+
+    # ------------------------------------------------------------------
+    # Mutual information
+    # MI = Σ p(x,y) log( p(x,y) / (p(x) p(y)) )
+    # ------------------------------------------------------------------
+    p_joint = counts / np.maximum(total, 1)
+    p_pop  = p_joint.sum(axis=1, keepdims=True)      # (n_pops,  1,       n_snps)
+    p_geno = p_joint.sum(axis=0, keepdims=True)      # (1,       n_genos, n_snps)
+    outer  = p_pop * p_geno
+    with np.errstate(divide="ignore", invalid="ignore"):
+        mi = np.nansum(
+            np.where(
+                (p_joint > 0) & (outer > 0),
+                p_joint * np.log(p_joint / outer),
+                0.0,
+            ),
+            axis=(0, 1),
+        )
+
+    # ------------------------------------------------------------------
+    # Symmetric KL divergence (mean over all population pairs)
+    # KL(P||Q) = Σ P(g) log( P(g) / Q(g) )
+    # ------------------------------------------------------------------
+    p_cond = counts / np.maximum(row_sums[:, np.newaxis, :], 1)  # (n_pops, n_genos, n_snps)
+    kl_sum = np.zeros(n_snps, dtype=np.float32)
+    n_pairs = 0
+    for i, j in combinations(range(n_pops), 2):
+        p = p_cond[i]   # (n_genos, n_snps)
+        q = p_cond[j]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            kl_fwd = np.nansum(
+                np.where(p > 0, p * np.log(p / np.maximum(q, 1e-10)), 0.0), axis=0
+            )
+            kl_rev = np.nansum(
+                np.where(q > 0, q * np.log(q / np.maximum(p, 1e-10)), 0.0), axis=0
+            )
+        kl_sum += (kl_fwd + kl_rev) / 2
+        n_pairs += 1
+    kl_div = kl_sum / n_pairs
+
+    if verbose:
+        print("Done.")
+
+    return pd.DataFrame({
+        "snp_id":              snp_cols,
+        "chi2":                chi2_stats.astype(np.float32),
+        "chi2_pvalue":         chi2_pvals,
+        "mutual_information":  mi.astype(np.float32),
+        "kl_divergence":       kl_div,
+    })
 
 
 def analyze_afreq(
@@ -111,7 +231,8 @@ def analyze_fst(
         plt.figure(figsize=(8, 4))
         fst_valid["HUDSON_FST"].hist(bins=50)
         plt.title("Distribution of per-variant Hudson FST")
-        plt.xlabel("FST"); plt.ylabel("Count")
+        plt.xlabel("FST")
+        plt.ylabel("Count")
         plt.show()
 
     return df, top_df

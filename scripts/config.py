@@ -228,16 +228,8 @@ class PathConfig:
     # ------------------------------------------------------------------
 
     @property
-    def ML_MODELS_STAT(self) -> Path:
-        return self.outputs_dir("statistical_v1/05a_stat_only_training")
-
-    @property
     def ML_MODELS_FST(self) -> Path:
         return self.outputs_dir("fst/05b_fst_only_training")
-
-    @property
-    def ML_MODELS_BOTH(self) -> Path:
-        return self.outputs_dir("statistical_v1/05c_fst_and_stat_training")
 
     @property
     def ML_MODELS_DIR(self) -> Path:
@@ -269,13 +261,11 @@ class PathConfig:
             self.outputs_dir("04a_statistical_snp_selection"),
             self.cache_dir("fst_only/04b_fst_and_pca"),
             self.outputs_dir("fst_only/04b_fst_and_pca"),
-            self.outputs_dir("statistical_v1/05a_stat_only_training"),
             self.outputs_dir("fst/05b_fst_only_training"),
-            self.outputs_dir("statistical_v1/05c_fst_and_stat_training"),
-            self.outputs_dir("statistical_v2/04a_snp_selection"),
-            self.outputs_dir("statistical_v2/05a_stat_training"),
-            self.outputs_dir("statistical_v2/05b_reduction"),
-            self.outputs_dir("statistical_v2/05c_fst_stat_training"),
+            self.outputs_dir("statistical/04a_snp_selection"),
+            self.outputs_dir("statistical/05a_stat_training"),
+            self.outputs_dir("statistical/05b_reduction"),
+            self.outputs_dir("statistical/05c_fst_stat_training"),
             self.outputs_dir("evaluation"),
             self.REPORTS_DIR,
         ]
@@ -391,8 +381,6 @@ def print_config_summary() -> None:
     print(f"    03b        : {PATHS.outputs_dir('04a_statistical_snp_selection')}")
     print(f"    04         : {PATHS.outputs_dir('fst_only/04b_fst_and_pca')}")
     print(f"    05b FST    : {PATHS.ML_MODELS_FST}")
-    print(f"    05c both   : {PATHS.ML_MODELS_BOTH}")
-    print(f"    05a stat   : {PATHS.ML_MODELS_STAT}")
     print(f"\n  Hard filters : MAF≥{HARD_FILTERS.MIN_AF:.4f}  call_rate≥{HARD_FILTERS.MIN_CALL_RATE}")
     print(f"  LD pruning   : {SITUATIONAL_FILTERS.LD_WINDOW_KB}kb / r²<{SITUATIONAL_FILTERS.LD_R2_THRESHOLD}")
     print(f"  FST top-N    : {SITUATIONAL_FILTERS.FST_TOP_N}")

@@ -30,6 +30,8 @@ from sklearn.metrics import (
     confusion_matrix,
     accuracy_score,
     f1_score,
+    roc_auc_score,
+    matthews_corrcoef,
 )
 
 # Import XGBoost if available
@@ -295,6 +297,18 @@ def evaluate_model(
     accuracy = accuracy_score(y_test_for_report, y_pred)
     f1_macro = f1_score(y_test_for_report, y_pred, average="macro")
     f1_weighted = f1_score(y_test_for_report, y_pred, average="weighted")
+    mcc = matthews_corrcoef(y_test_for_report, y_pred)
+
+    # ROC-AUC (macro OvR) — requires predict_proba; gracefully skipped otherwise
+    roc_auc = None
+    if hasattr(clf, "predict_proba"):
+        try:
+            y_prob = clf.predict_proba(X_test)
+            roc_auc = roc_auc_score(
+                y_test_for_report, y_prob, multi_class="ovr", average="macro"
+            )
+        except Exception:
+            pass
 
     report = classification_report(
         y_test_for_report,
@@ -309,6 +323,8 @@ def evaluate_model(
         "accuracy": accuracy,
         "f1_macro": f1_macro,
         "f1_weighted": f1_weighted,
+        "mcc": mcc,
+        "roc_auc_ovr_macro": roc_auc,
         "classification_report": report,
         "confusion_matrix": conf_matrix,
     }
@@ -320,6 +336,9 @@ def evaluate_model(
         print(f"Accuracy: {accuracy:.4f}")
         print(f"F1 (macro): {f1_macro:.4f}")
         print(f"F1 (weighted): {f1_weighted:.4f}")
+        print(f"MCC: {mcc:.4f}")
+        if roc_auc is not None:
+            print(f"ROC-AUC (OvR macro): {roc_auc:.4f}")
         print(f"\nClassification Report:")
         print(report)
 
@@ -357,18 +376,35 @@ def cross_validate_model(
         le = LabelEncoder()
         y_cv = le.fit_transform(y)
 
-    scores = cross_val_score(clf, X, y_cv, cv=cv, scoring="accuracy")
+    from sklearn.model_selection import cross_validate as _cross_validate
+    scoring = {"accuracy": "accuracy", "f1_weighted": "f1_weighted",
+               "mcc": "matthews_corrcoef"}
+    # Add ROC-AUC only for classifiers that support predict_proba
+    if hasattr(clf, "predict_proba"):
+        scoring["roc_auc_ovr"] = "roc_auc_ovr"
+    cv_out = _cross_validate(clf, X, y_cv, cv=cv, scoring=scoring)
 
+    scores = cv_out["test_accuracy"]
     results = {
         "model_name": model_name,
         "cv_folds": cv,
         "cv_scores": scores,
         "cv_mean": scores.mean(),
         "cv_std": scores.std(),
+        "f1_weighted_mean": cv_out["test_f1_weighted"].mean(),
+        "f1_weighted_std": cv_out["test_f1_weighted"].std(),
+        "mcc_mean": cv_out["test_mcc"].mean(),
+        "mcc_std": cv_out["test_mcc"].std(),
+        "roc_auc_mean": cv_out["test_roc_auc_ovr"].mean() if "test_roc_auc_ovr" in cv_out else None,
+        "roc_auc_std": cv_out["test_roc_auc_ovr"].std() if "test_roc_auc_ovr" in cv_out else None,
     }
 
     if verbose:
-        print(f"  CV Accuracy: {scores.mean():.4f} (+/- {scores.std()*2:.4f})")
+        print(f"  CV Accuracy:   {scores.mean():.4f} (+/- {scores.std()*2:.4f})")
+        print(f"  CV F1 (wtd):   {results['f1_weighted_mean']:.4f}")
+        print(f"  CV MCC:        {results['mcc_mean']:.4f}")
+        if results["roc_auc_mean"] is not None:
+            print(f"  CV ROC-AUC:    {results['roc_auc_mean']:.4f}")
 
     return results
 

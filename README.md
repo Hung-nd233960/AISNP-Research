@@ -1,276 +1,191 @@
 # Ancestry-Informative SNP Selection Pipeline
 
-A comprehensive bioinformatics pipeline for identifying and validating Ancestry-Informative Single Nucleotide Polymorphisms (AISNPs) from 1000 Genomes Project data.
+Automated selection and validation of Ancestry-Informative SNPs (AISNPs) for within-East-Asian population discrimination (Han / JPT / SEA) using 1000 Genomes Project Phase 3 data.
 
-## 🎯 Project Overview
+## Overview
 
-This project implements a two-part analysis pipeline:
-
-- **Part 1**: Statistical SNP selection from 1000 Genomes data using quality control, statistical tests, and machine learning
-- **Part 2**: Comparison with known AISNP panels from research papers and commercial products
+Given 504 EAS individuals across three subpopulations, the pipeline finds the smallest SNP panel that allows a machine-learning classifier to accurately assign ancestry at the Han Chinese / Japanese / Southeast Asian level — a deliberately hard classification task since all three groups belong to the same EAS super-population.
 
 ### Target Populations
 
-- **CHB**: Han Chinese in Beijing
-- **JPT**: Japanese in Tokyo  
-- **KHV**: Kinh in Ho Chi Minh City, Vietnam
+| Group | Source sub-populations | N |
+|-------|----------------------|---|
+| **Han** | CHB (Han Chinese Beijing) + CHS (Han Chinese South) | 208 |
+| **JPT** | JPT (Japanese in Tokyo) | 104 |
+| **SEA** | KHV (Kinh Vietnamese) + CDX (Dai Chinese Xishuangbanna) | 192 |
 
-## 📁 Project Structure
+## Pipeline Architecture
 
 ```
-BioinfoMidterm/
-├── 1000genomes/              # Input data and intermediate outputs
-│   ├── main_vcf/             # Source VCF files
-│   ├── output/               # PLINK output files
-│   └── *.csv                 # Sample lists
+1000 Genomes Phase 3 (~22M SNPs, 504 EAS samples)
+        │
+        ▼
+┌──────────────────────────┐
+│  1. QUALITY FILTERING    │  614,759 SNPs retained
+│  MAF · call rate ·       │
+│  HWE · LD pruning        │
+└──────────────────────────┘
+        │
+        ▼
+┌──────────────────────────┐
+│  2. CANDIDATE SET        │  3 pools:
+│     CONSTRUCTION         │  stat (1,005) · FST (2,508) · fst_stat (1,003)
+└──────────────────────────┘
+        │
+        ▼
+┌──────────────────────────┐
+│  3. THREE-STAGE ML SWEEP │  Stage 1: pool × reductor selection (9 configs)
+│                          │  Stage 2: 6-classifier evaluation
+│                          │  Stage 3: 80/20 panel commitment
+└──────────────────────────┘
+        │
+        ▼
+┌──────────────────────────┐
+│  4. BENCHMARKING         │  vs Cai 2024 · Shi 2019 · Cao 2022
+└──────────────────────────┘
+```
+
+### Key Results
+
+| Panel | N | Accuracy (5-fold CV) |
+|-------|---|---------------------|
+| Ours (stat + ElasticNet) | 35 | ~92% |
+| Ours (stat + ElasticNet) | 50 | ~93% |
+| Ours (stat + ElasticNet) | 70 | ~95% |
+| Cai et al. 2024 (EAS-specific) | 34 | ~94.6% |
+| Cao et al. 2022 | 14 matched / 19 | ~82% |
+| Shi et al. 2019 | 116 matched / 142 | ~79% |
+
+## Project Structure
+
+```
+AISNP_Research/
+├── notebooks/sea_jpt_cn/
+│   ├── pre-filtering/
+│   │   ├── 01_hard_filtering.ipynb       # MAF, call rate, biallelic filter
+│   │   ├── 02_situational_filtering.ipynb # HWE, LD pruning → 614,759 SNPs
+│   │   └── 03_vcf_to_matrix.ipynb        # Build genotype matrix cache
+│   │
+│   ├── statistical/
+│   │   ├── 04a_snp_selection.ipynb       # χ², δAF, JSD ranking
+│   │   ├── 05a_stat_training.ipynb       # stat candidate set (1,005 SNPs)
+│   │   ├── 05b_reduction.ipynb           # stat/FST correlation analysis
+│   │   ├── 05c_fst_stat_training.ipynb   # fst_stat candidate set (1,003 SNPs)
+│   │   └── analysis/test_evaluation.ipynb
+│   │
+│   ├── fst/
+│   │   ├── 04b_fst_and_pca.ipynb         # Weir-Cockerham FST, PCA
+│   │   └── 05b_fst_only_training.ipynb   # FST candidate set (2,508 SNPs)
+│   │
+│   └── self_evaluation/
+│       ├── 08_unified_panel_sweep.ipynb  # ★ 3-stage ML sweep (main)
+│       ├── 09_published_panel_comparison.ipynb # Benchmark vs published panels
+│       ├── 10_panel_overlap.ipynb        # rsID conversion + overlap
+│       └── 11_results.ipynb              # All figures and tables
 │
 ├── data/
-│   └── known_aisnps/         # rsID lists from papers/products (Part 2)
+│   └── published_panels/                 # Cai, Cao, Shi rsID lists + coord maps
 │
 ├── scripts/
-│   ├── config.py             # Centralized configuration
-│   ├── utils.py              # Utility functions
-│   ├── hard_filters.py       # Hard filtering functions
-│   ├── situational_filters.py # Situational filtering
-│   ├── fst_selection.py      # FST-based SNP selection
-│   ├── ml_training.py        # ML training utilities
-│   │
-│   ├── notebooks/            # Jupyter notebooks
-│   │   ├── 01_hard_filtering.ipynb
-│   │   ├── 02_situational_filtering.ipynb
-│   │   ├── 02b_statistical_snp_selection.ipynb
-│   │   ├── 03_fst_and_pca.ipynb
-│   │   ├── 03b_statistical_snp_analysis.ipynb
-│   │   ├── 04_ml_training.ipynb
-│   │   ├── 04b_ml_training_statistical.ipynb
-│   │   ├── 04c_ml_consensus_snps.ipynb
-│   │   ├── 05_model_evaluation.ipynb
-│   │   └── part2/            # Part 2 notebooks
-│   │       ├── 06_rsid_to_bed.ipynb
-│   │       ├── 07_bed_to_ml_matrix.ipynb
-│   │       └── 08_known_aisnps_ml.ipynb
-│   │
-│   └── part2/                # Part 2 helper modules
-│       ├── rsid_utils.py
-│       ├── bed_to_matrix.py
-│       └── ml_comparison.py
+│   ├── config.py                         # Centralized paths and parameters
+│   └── notebook_init.py                  # Shared notebook setup
 │
-├── output/
-│   ├── ml_models/            # Trained models
-│   └── part2/                # Part 2 outputs
-│
-├── graphs/                   # Visualization outputs
-├── reports/                  # Text reports
-└── docs/                     # Documentation
+└── reports/
+    ├── SYSTEM_OVERVIEW.md                # Full pipeline description
+    └── METHODOLOGY.md                    # Methods section (paper-ready)
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
 ```bash
-# System requirements
-- Python 3.10+
-- PLINK2 (https://www.cog-genomics.org/plink/2.0/)
-- bcftools (optional, for VCF processing)
+# System
+Python 3.10+
+PLINK2  https://www.cog-genomics.org/plink/2.0/
 
 # Python packages
-pip install pandas numpy scipy scikit-learn xgboost matplotlib seaborn tqdm statsmodels requests
+pip install pandas numpy scipy scikit-learn xgboost matplotlib seaborn \
+            tqdm statsmodels requests
 ```
 
-### Conda Environment (spec-file)
-
-- To recreate the exact environment used in this project, use the provided [spec-file.txt](spec-file.txt):
+### Conda Environment
 
 ```bash
 conda create -n aisnp --file spec-file.txt
 conda activate aisnp
 ```
 
-### Data Download
-
-- Recommended: Use Globus to download 1000 Genomes Project data for fast, reliable transfers.
-- Merged all vcf with bcftools
-
-### Running the Pipeline
-
-#### Part 1: Statistical SNP Selection
+### Run Order
 
 ```bash
-# Navigate to notebooks
-cd notebooks
+# 1. Quality filtering
+01_hard_filtering → 02_situational_filtering → 03_vcf_to_matrix
 
-# Run in order:
-# 1. Hard filtering (quality control)
-jupyter notebook 01_hard_filtering.ipynb
+# 2. Candidate set construction (can run in parallel)
+04a_snp_selection → 05a_stat_training → 05c_fst_stat_training
+04b_fst_and_pca   → 05b_fst_only_training
 
-# 2. Situational filtering (HWE, LD pruning)
-jupyter notebook 02_situational_filtering.ipynb
+# 3. Main sweep (requires step 2)
+08_unified_panel_sweep        # ~30 min, uses cache on re-run
 
-# 3. Statistical SNP selection (χ², MI, IG, KL divergence)
-jupyter notebook 02b_statistical_snp_selection.ipynb
+# 4. Benchmarking
+09_published_panel_comparison # requires 08
+10_panel_overlap              # requires 08
 
-# 4. PCA visualization
-jupyter notebook 03_fst_and_pca.ipynb
-
-# 5. ML training with consensus SNPs
-jupyter notebook 04c_ml_consensus_snps.ipynb
+# 5. Results
+11_results                    # requires 08 + 09
 ```
 
-#### Part 2: Known AISNP Comparison
+## Methods Summary
 
-```bash
-# Add rsID files to data/known_aisnps/
-# Then run:
-jupyter notebook part2/06_rsid_to_bed.ipynb
-jupyter notebook part2/07_bed_to_ml_matrix.ipynb
-jupyter notebook part2/08_known_aisnps_ml.ipynb
-```
+### Quality Filtering
 
-## 📊 Pipeline Workflows
+| Filter | Threshold |
+|--------|-----------|
+| SNP-only, biallelic | — |
+| MAF | ≥ 1/(2×504) ≈ 0.001 |
+| Call rate | ≥ 95% |
+| HWE | p ≥ 1×10⁻⁶ (keep-fewhet) |
+| LD pruning | r² < 0.10, 1,000 kb window |
 
-### Part 1: Statistical Selection Workflow
+### Candidate Sets
 
-```
-1000 Genomes VCF
-       ↓
-[01] Hard Filters (SNP-only, biallelic, MAF, call rate)
-       ↓
-[02] Situational Filters (HWE, LD pruning)
-       ↓
-[02b] Statistical Tests (χ², MI, IG, KL) → All-4-tests consensus SNPs
-       ↓
-[03] PCA Visualization
-       ↓
-[04c] ML Training (RF, XGBoost, SVM, LR, etc.)
-       ↓
-Performance metrics, confusion matrices, feature importance
-```
+| Pool | Construction | Size |
+|------|-------------|------|
+| **stat** | Union of top-500 per test (χ², δAF, JSD) | 1,005 |
+| **FST** | Union of top-1,000 per pairwise Weir-Cockerham FST | 2,508 |
+| **fst_stat** | Intersection of stat and FST | 1,003 |
 
-### Part 2: Known AISNP Comparison Workflow
+### Three-Stage ML Sweep (notebook 08)
 
-```
-rsID lists (CSV/TXT)
-       ↓
-[06] rsID → BED conversion (Ensembl API lookup)
-       ↓
-[07] Extract genotypes from pfile → ML matrices
-       ↓
-[08] Compare performance across all sources
-       ↓
-Heatmaps, confusion matrices, comparison plots
-```
+**Stage 1** — For each N ∈ {5, 10, … 100}: compare 3 pools × 3 reductors (L1-LR, ElasticNet, RF) via 5-fold nested CV. Winner: **stat + ElasticNet** at nearly all N ≥ 15.
 
-## ⚙️ Configuration
+**Stage 2** — Evaluate 6 classifiers on Stage 1 winner config:
 
-All parameters are centralized in `scripts/config.py`:
+| Classifier | Key hyperparameters |
+|------------|-------------------|
+| Random Forest (RF) | n_estimators=100, max_depth=10 |
+| XGBoost (XGB) | n_estimators=200, max_depth=6, lr=0.1, subsample=0.8 |
+| Logistic Regression (LR) | lbfgs, max_iter=1000 |
+| SVM-RBF | RBF kernel, scaled |
+| SVM-Linear | Linear kernel, scaled |
+| GBM | n_estimators=100, max_depth=5 |
 
-### Hard Filters (Always Applied)
+**Stage 3** — 80/20 stratified hold-out to commit final panels. Committed panels: **N = 35, N = 50, N = 70**.
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| SNP_ONLY | True | Remove indels, CNVs |
-| MAX_ALLELES | 2 | Biallelic variants only |
-| MIN_AF | 0.0016 | Minimum allele frequency |
-| MIN_CALL_RATE | 0.95 | Minimum genotyping rate |
+### Benchmarking (notebook 09)
 
-### Situational Filters (Context-Dependent)
+Published panels evaluated on the same 504-sample cohort with identical 6-classifier + 5-fold CV protocol. Match rates: Cai 34/34 (100%), Cao 14/19 (74%), Shi 116/142 (82%).
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| HWE_P_THRESHOLD | 1e-6 | HWE p-value threshold |
-| LD_WINDOW_KB | 1000 | LD pruning window |
-| LD_R2_THRESHOLD | 0.1 | LD R² cutoff |
-| FST_TOP_N | 1000 | Top FST variants |
-
-### Statistical Tests (02b)
-
-| Test | Purpose |
-|------|---------|
-| Pearson χ² | Test genotype-population independence |
-| Mutual Information | Measure genotype-population association |
-| Information Gain | Population entropy reduction |
-| KL Divergence | Genotype distribution divergence |
-
-**Consensus SNPs**: Only SNPs passing ALL 4 tests are selected.
-
-## 📈 Key Outputs
-
-### Part 1 Outputs
-
-| File | Description |
-|------|-------------|
-| `statistical_all4_snps_02b.csv` | SNPs passing all 4 statistical tests |
-| `statistical_ml_data_02b.csv` | ML-ready matrix (consensus SNPs only) |
-| `consensus_snps_cv_results.csv` | Cross-validation results |
-| `consensus_snps_importance.csv` | Feature importance rankings |
-
-### Part 2 Outputs
-
-| File | Description |
-|------|-------------|
-| `{source}.bed` | BED file with genomic coordinates |
-| `{source}_ml_matrix.csv` | ML-ready genotype matrix |
-| `ml_comparison_results.csv` | K-fold CV results across sources |
-| `performance_heatmaps.png` | Visual comparison |
-
-## 🔬 Methods
-
-### Statistical SNP Selection
-
-1. **χ² Test**: Tests if genotype frequencies differ across populations
-2. **Mutual Information**: Measures information shared between genotype and population
-3. **Information Gain**: Quantifies population entropy reduction from knowing genotype
-4. **KL Divergence**: Measures divergence between population-specific genotype distributions
-
-### Machine Learning Models
-
-| Model | Use Case |
-|-------|----------|
-| Random Forest | Robust, handles non-linear relationships |
-| XGBoost | High accuracy, handles imbalanced data |
-| Logistic Regression | Interpretable, good baseline |
-| SVM (RBF/Linear) | Effective for high-dimensional data |
-| K-Nearest Neighbors | Simple, distance-based |
-| Gradient Boosting | Ensemble method, high accuracy |
-| MLP Neural Network | Captures complex patterns |
-
-## 📚 Documentation
-
-### Core Documentation
-
-- [docs/PIPELINE.md](docs/PIPELINE.md) - Detailed pipeline description
-- [docs/CONFIGURATION.md](docs/CONFIGURATION.md) - Configuration reference
-- [docs/STATISTICAL_TESTS.md](docs/STATISTICAL_TESTS.md) - Statistical methods
-- [docs/ML_MODELS.md](docs/ML_MODELS.md) - ML model details
-- [scripts/part2/README.md](scripts/part2/README.md) - Part 2 documentation
-
-### Results
-
-- [docs/RESULTS.md](docs/RESULTS.md) - Part 1 Results: Statistical AISNP Selection
-- [docs/RESULTS_PART2.md](docs/RESULTS_PART2.md) - Part 2 Results: Known AISNP Panel Comparison
-
-### Presentation & Diagrams
-
-- [docs/slides/PRESENTATION_OUTLINE.md](docs/slides/PRESENTATION_OUTLINE.md) - Slide-by-slide presentation guide (40 slides)
-- [docs/diagrams/SYSTEM_DIAGRAMS.md](docs/diagrams/SYSTEM_DIAGRAMS.md) - System block diagrams & data flow
-
-## 🔗 References
+## References
 
 - 1000 Genomes Project: <https://www.internationalgenome.org/>
 - PLINK2: <https://www.cog-genomics.org/plink/2.0/>
-- Ensembl REST API: <https://rest.ensembl.org/>
+- Cai et al. 2024 — EAS-specific 34-SNP panel
+- Cao et al. 2022 — 19-SNP panel
+- Shi et al. 2019 — 36/59/98/142-SNP nested panels
 
-## 📝 License
+## License
 
-This project is for educational/research purposes.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Submit a pull request
-
----
-
-*Last updated: January 2026*
+For research and educational purposes only.

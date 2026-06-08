@@ -72,12 +72,12 @@ Using the Stage-1 winning configuration for each N, we evaluated six classifiers
 
 | Classifier | Key hyperparameters |
 |---|---|
-| **Random Forest (RF)** | n_estimators=200, no max depth |
+| **Random Forest (RF)** | n_estimators=100, max_depth=10 |
 | **XGBoost (XGB)** | n_estimators=200, max_depth=6, learning_rate=0.1, subsample=0.8 |
 | **Logistic Regression (LR)** | LBFGS solver, max_iter=1000, L2 penalty |
 | **SVM with RBF kernel (SVM-RBF)** | Default C and γ (sklearn defaults) |
 | **SVM with Linear kernel (SVM-Lin)** | Default C |
-| **Gradient Boosting Machine (GBM)** | sklearn GradientBoostingClassifier, default parameters |
+| **Gradient Boosting Machine (GBM)** | n_estimators=100, max_depth=5 |
 
 Performance was measured across four metrics per fold: **accuracy**, **weighted F1-score**, **Matthews Correlation Coefficient (MCC)**, and **ROC-AUC** (one-vs-rest, macro-averaged). Stage 2 accuracy is the **primary reported metric** throughout this study.
 

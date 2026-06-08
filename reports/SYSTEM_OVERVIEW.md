@@ -130,12 +130,12 @@ For each N: use Stage-1 winner, evaluate **6 classifiers** via 5-fold nested CV.
 
 | Classifier | Key hyperparameters |
 |---|---|
-| Random Forest (RF) | n_estimators=200 |
+| Random Forest (RF) | n_estimators=100, max_depth=10 |
 | XGBoost (XGB) | n_estimators=200, max_depth=6, lr=0.1, subsample=0.8 |
-| Logistic Regression (LR) | SAGA, max_iter=2000 |
+| Logistic Regression (LR) | lbfgs solver (default), max_iter=1000, L2 |
 | SVM-RBF | RBF kernel, scaled input |
 | SVM-Lin | Linear kernel, scaled input |
-| GBM | sklearn defaults |
+| GBM | n_estimators=100, max_depth=5 |
 
 Metrics: accuracy, weighted F1, MCC, ROC-AUC (macro OvR). **Stage 2 accuracy = primary reported metric.**
 

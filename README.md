@@ -116,9 +116,30 @@ conda create -n aisnp --file spec-file.txt
 conda activate aisnp
 ```
 
+### Data Preparation
+
+Before running any notebooks, raw VCF files from the 1000 Genomes Project must be
+normalized and merged into a single PLINK2 pfile. The script handles this automatically:
+
+```bash
+# Usage: scripts/vcf_preprocessing.sh <vcf_dir> <output_prefix> [threads] [memory_mb]
+bash scripts/vcf_preprocessing.sh /mnt/data/1000genomes allchr 16 32000
+```
+
+What it does:
+1. **Normalize** — splits multi-allelic sites, left-aligns indels (bcftools norm), autosomes only
+2. **Convert** — each chromosome VCF → PLINK2 pgen/pvar/psam
+3. **Merge** — all chromosomes into a single `allchr.{pgen,pvar,psam}` file
+
+The output path must match `PATHS.PLINK_MERGED` in `paths.yaml` / `paths.local.yaml`.
+This step only needs to run once; all notebooks assume the merged pfile already exists.
+
 ### Run Order
 
 ```bash
+# 0. Data preparation (once, before everything else)
+bash scripts/vcf_preprocessing.sh <vcf_dir> <output_prefix> [threads] [memory_mb]
+
 # 1. Quality filtering
 01_hard_filtering → 02_situational_filtering → 03_vcf_to_matrix
 

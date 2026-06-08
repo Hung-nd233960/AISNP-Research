@@ -41,7 +41,7 @@ S_OVERLAP    := $(STAMP_DIR)/overlap.done      # 10 panel overlap / rsID map
 S_RESULTS    := $(STAMP_DIR)/results.done      # 11 figures + tables
 
 # ---------------------------------------------------------------------------
-.PHONY: all prefilter fst stat fst_stat sweep benchmark overlap results \
+.PHONY: all preprocess prefilter fst stat fst_stat sweep benchmark overlap results \
         clean-sweep clean-stamps clean help
 
 all: $(S_RESULTS)
@@ -52,6 +52,7 @@ help:
 	@echo "AISNP Pipeline — Han / JPT / SEA"
 	@echo ""
 	@echo "Targets:"
+	@echo "  preprocess   Normalize + merge raw VCFs → PLINK2 pfile (run ONCE first)"
 	@echo "  all          Full pipeline (01 → 11)"
 	@echo "  prefilter    01 hard filter + 02 situational filter + 03 matrix"
 	@echo "  fst          04b FST/PCA + 05b FST-only ML"
@@ -67,6 +68,22 @@ help:
 	@echo "  clean-stamps Reset all stamps (re-runs all notebooks, keeps outputs)"
 	@echo "  clean        Delete stamps + all pipeline outputs"
 	@echo ""
+
+# ---------------------------------------------------------------------------
+# Data preparation — run ONCE before anything else.
+# Requires 1000 Genomes VCF files already downloaded.
+# Usage: make preprocess VCF_DIR=/path/to/vcfs [THREADS=16] [MEMORY_MB=32000]
+# ---------------------------------------------------------------------------
+VCF_DIR    ?= $(GENOMES)/raw_vcf
+VCF_PREFIX ?= allchr
+THREADS    ?= 0
+MEMORY_MB  ?=
+
+preprocess:
+	@echo "==> VCF preprocessing: normalize + convert + merge..."
+	@echo "    VCF_DIR=$(VCF_DIR)  OUTPUT=$(VCF_PREFIX)  THREADS=$(THREADS)"
+	bash scripts/vcf_preprocessing.sh "$(VCF_DIR)" "$(VCF_PREFIX)" "$(THREADS)" "$(MEMORY_MB)"
+	@echo "Preprocessing complete. Output: $(GENOMES)/plink/$(VCF_PREFIX).{pgen,pvar,psam}"
 
 # ---------------------------------------------------------------------------
 # Stage: Pre-filtering (01 → 02 → 03)

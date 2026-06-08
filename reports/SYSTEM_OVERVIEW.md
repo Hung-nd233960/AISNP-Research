@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-Given whole-genome SNP data from 504 East Asian individuals across three subpopulations, identify the **smallest set of SNPs** that allows a machine learning classifier to accurately assign ancestry to CN (Han Chinese), JPT (Japanese), or SEA (Southeast Asian).
+Given whole-genome SNP data from 504 East Asian individuals across three subpopulations, identify the **smallest set of SNPs** that allows a machine learning classifier to accurately assign ancestry to Han (Han Chinese), JPT (Japanese), or SEA (Southeast Asian).
 
 This is a deliberately hard classification problem — all three groups belong to the same EAS super-population and are genetically close. Continental-level ancestry markers are insufficient.
 
@@ -19,14 +19,14 @@ This is a deliberately hard classification problem — all three groups belong t
 |---|---|
 | Source | 1000 Genomes Project Phase 3 |
 | Total samples | 504 EAS individuals |
-| Target groups | CN (n=208), JPT (n=104), SEA (n=192) |
+| Target groups | Han (n=208), JPT (n=104), SEA (n=192) |
 | SNPs after filtering | 614,759 |
 
 ### Population grouping
 
 | Target | Raw sub-populations | Description |
 |---|---|---|
-| **CN** | CHB + CHS | Han Chinese (Beijing + South) |
+| **Han** | CHB + CHS | Han Chinese (Beijing + South) |
 | **JPT** | JPT | Japanese |
 | **SEA** | KHV + CDX | Kinh Vietnamese + Chinese Dai |
 
@@ -98,7 +98,7 @@ Top-500 SNPs per retained test → union → **1,005 unique SNPs**.
 
 ### FST block (FST — 2,508 SNPs)
 
-Weir-Cockerham FST computed pairwise across all three population pairs (CN↔JPT, CN↔SEA, JPT↔SEA) using plink2. Top-1,000 per pair → union → **2,508 SNPs**.
+Weir-Cockerham FST computed pairwise across all three population pairs (Han↔JPT, Han↔SEA, JPT↔SEA) using plink2. Top-1,000 per pair → union → **2,508 SNPs**.
 
 FST normalises by heterozygosity and upweights rare, drift-fixed variants. δAF treats all allele frequencies equally — the two approaches capture partly orthogonal signal.
 
@@ -180,7 +180,7 @@ Our committed panels (N=35/50/70) converted to rsIDs via MyVariant.info. Set int
 
 - **vs Cai**: 7–8 shared SNPs (notable given orthogonal selection methods)
 - **vs Cao**: 2–3 shared SNPs
-- **vs Shi**: 0 shared SNPs (Shi designed for broader Asian scope, not CN/JPT/SEA)
+- **vs Shi**: 0 shared SNPs (Shi designed for broader Asian scope, not Han/JPT/SEA)
 
 8 shared loci annotated: CADM2 (BMI/cognition), PRRC2A (MHC/autoimmune), TTC3 (chr21/Alzheimer's), SYNE1 (cerebellar ataxia), OLFM3 (glaucoma), DCAF16 (cataract), P2RY1 (blood pressure/T2D), POLR1E (rRNA biogenesis). All are ancestry-informative via population allele frequency differences, not disease-causal.
 

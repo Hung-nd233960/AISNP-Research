@@ -4,7 +4,7 @@
 
 ## 2.1 Data and Quality Filtering
 
-We used whole-genome SNP data from the 1000 Genomes Project Phase 3, selecting 504 East Asian individuals across five subpopulations: CHB (Han Chinese Beijing), CHS (Han Chinese South), JPT (Japanese), KHV (Kinh Vietnamese), and CDX (Dai Chinese Xishuangbanna). For this study, subpopulations were merged into three target groups: **CN** (CHB + CHS, n=208), **JPT** (JPT, n=104), and **SEA** (KHV + CDX, n=192).
+We used whole-genome SNP data from the 1000 Genomes Project Phase 3, selecting 504 East Asian individuals across five subpopulations: CHB (Han Chinese Beijing), CHS (Han Chinese South), JPT (Japanese), KHV (Kinh Vietnamese), and CDX (Dai Chinese Xishuangbanna). For this study, subpopulations were merged into three target groups: **Han** (CHB + CHS, n=208), **JPT** (JPT, n=104), and **SEA** (KHV + CDX, n=192).
 
 Raw genotype data was processed through a sequential quality filtering pipeline using plink2. The following filters were applied in order:
 
@@ -24,7 +24,7 @@ Directly applying machine learning to 614,759 SNPs is computationally intractabl
 
 ### 2.2.1 Statistical Block
 
-We evaluated four population-differentiation statistics across all 614,759 SNPs to identify those with significant allele frequency differences among CN, JPT, and SEA:
+We evaluated four population-differentiation statistics across all 614,759 SNPs to identify those with significant allele frequency differences among Han, JPT, and SEA:
 
 - **Chi-squared test (χ²)**: tests whether allele count distributions differ significantly across the three groups
 - **Jensen-Shannon Divergence (JSD)**: a symmetric, bounded measure of divergence between population allele frequency distributions
@@ -34,7 +34,7 @@ A preliminary evaluation (`test_evaluation` notebook) compared all candidate sta
 
 ### 2.2.2 FST Block
 
-Wright's fixation index (F_ST) measures the proportion of total genetic variance attributable to differences between subpopulations. We computed pairwise Weir-Cockerham F_ST between all three population pairs (CN vs. JPT, CN vs. SEA, JPT vs. SEA) using plink2. The top-1,000 SNPs from each pairwise comparison were pooled into a union set, forming the **FST block: 2,508 SNPs**.
+Wright's fixation index (F_ST) measures the proportion of total genetic variance attributable to differences between subpopulations. We computed pairwise Weir-Cockerham F_ST between all three population pairs (Han vs. JPT, Han vs. SEA, JPT vs. SEA) using plink2. The top-1,000 SNPs from each pairwise comparison were pooled into a union set, forming the **FST block: 2,508 SNPs**.
 
 ### 2.2.3 Combined Block (fst_stat)
 
@@ -52,7 +52,7 @@ The three candidate sets carried forward to machine learning are summarised belo
 
 ## 2.3 ML-Based Panel Selection
 
-SNP panel selection was framed as a feature selection problem: find the smallest subset of SNPs from the candidate set such that a classifier achieves maximum accuracy on the 3-class CN/JPT/SEA task. We implemented a three-stage pipeline designed to minimise evaluation leakage while systematically comparing all candidate configurations.
+SNP panel selection was framed as a feature selection problem: find the smallest subset of SNPs from the candidate set such that a classifier achieves maximum accuracy on the 3-class Han/JPT/SEA task. We implemented a three-stage pipeline designed to minimise evaluation leakage while systematically comparing all candidate configurations.
 
 ### 2.3.1 Stage 1 — Reductor and Candidate Set Selection
 

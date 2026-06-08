@@ -1,139 +1,177 @@
-# SEA-JPT-CN Ancestry Inference Pipeline
-# Run a single stage: make <target>
-# Run full pipeline:  make all
-# Remove intermediates: make clean
+# AISNP Research Pipeline — Han / JPT / SEA (1000 Genomes Phase 3)
+#
+# make all          Run the full pipeline end-to-end
+# make sweep        Re-run Stage 2/3 only (after clearing its cache)
+# make results      Re-render all figures and tables (notebook 11)
+# make clean-sweep  Delete Stage 2/3 cache so notebook 08 re-runs fully
+# make clean        Delete all intermediate outputs
+# make help         Show this message
 
 CONDA_ENV  := aisnp
-PYTHON     := conda run -n $(CONDA_ENV) python3
+NB_EXEC    := conda run -n $(CONDA_ENV) jupyter nbconvert \
+              --to notebook --execute --inplace \
+              --ExecutePreprocessor.timeout=7200
+
 NB_DIR     := notebooks/sea_jpt_cn
 
-# Read genomes_data root from paths.yaml (or default)
-GENOMES    := $(shell python3 -c \
-  "import yaml; d=yaml.safe_load(open('paths.yaml')); print(d.get('genomes_data','data/1000genomes'))" \
+# Resolve genomes_data root from paths.yaml (or paths.local.yaml if present)
+GENOMES    := $(shell python3 -c "\
+import yaml, os; \
+p = 'paths.local.yaml' if os.path.exists('paths.local.yaml') else 'paths.yaml'; \
+print(yaml.safe_load(open(p)).get('genomes_data','data/1000genomes'))" \
   2>/dev/null || echo "data/1000genomes")
 
-CACHE      := $(GENOMES)/cache
 OUTPUTS    := $(GENOMES)/outputs
+SWEEP_DIR  := $(OUTPUTS)/self_evaluation/08_unified_panel_sweep
 
 # ---------------------------------------------------------------------------
-# Stamp files — touch these to mark a stage complete
+# Stamp files — touch to mark a stage complete; delete to force re-run
 # ---------------------------------------------------------------------------
-STAMP_DIR       := .pipeline_stamps
+STAMP_DIR        := .pipeline_stamps
 $(STAMP_DIR):
 	mkdir -p $@
 
-STAMP_PREFILTER := $(STAMP_DIR)/prefilter.done   # 01 + 02 + 03
-STAMP_FST       := $(STAMP_DIR)/04_fst.done
-STAMP_STAT      := $(STAMP_DIR)/04a_stat.done
-STAMP_ML_FST    := $(STAMP_DIR)/05b_ml_fst.done
-STAMP_ML_BOTH   := $(STAMP_DIR)/05c_ml_both.done
-STAMP_ML_STAT   := $(STAMP_DIR)/05a_ml_stat.done
-STAMP_EVAL      := $(STAMP_DIR)/06_eval.done
+S_PREFILTER  := $(STAMP_DIR)/prefilter.done    # 01 → 02 → 03
+S_FST        := $(STAMP_DIR)/fst.done          # 04b + 05b
+S_STAT       := $(STAMP_DIR)/stat.done         # 04a + 05a
+S_FSTSTAT    := $(STAMP_DIR)/fst_stat.done     # 05c
+S_SWEEP      := $(STAMP_DIR)/sweep.done        # 08 unified panel sweep
+S_BENCHMARK  := $(STAMP_DIR)/benchmark.done    # 09 published panel comparison
+S_OVERLAP    := $(STAMP_DIR)/overlap.done      # 10 panel overlap / rsID map
+S_RESULTS    := $(STAMP_DIR)/results.done      # 11 figures + tables
 
 # ---------------------------------------------------------------------------
-.PHONY: all clean clean-stamps help
+.PHONY: all prefilter fst stat fst_stat sweep benchmark overlap results \
+        clean-sweep clean-stamps clean help
 
-all: $(STAMP_EVAL)
-	@echo "Pipeline complete."
+all: $(S_RESULTS)
+	@echo "Pipeline complete. Figures: $(OUTPUTS)/self_evaluation/11_results/"
 
 help:
+	@echo ""
+	@echo "AISNP Pipeline — Han / JPT / SEA"
+	@echo ""
 	@echo "Targets:"
-	@echo "  all         Run the full pipeline end-to-end"
-	@echo "  prefilter   01 hard filter → 02 situational filter → 03 VCF-to-matrix"
-	@echo "  fst         04 FST selection + PCA"
-	@echo "  stat        03b statistical SNP selection + 04b analysis"
-	@echo "  ml          05a/b/c ML training (FST-only, FST+stat, stat-only)"
-	@echo "  eval        06 model evaluation"
-	@echo "  clean       Delete all pipeline intermediate files"
-	@echo "  clean-stamps  Reset stamps only (re-run without deleting data)"
+	@echo "  all          Full pipeline (01 → 11)"
+	@echo "  prefilter    01 hard filter + 02 situational filter + 03 matrix"
+	@echo "  fst          04b FST/PCA + 05b FST-only ML"
+	@echo "  stat         04a stat selection + 05a stat ML"
+	@echo "  fst_stat     05c FST+stat consensus ML"
+	@echo "  sweep        08 unified 3-stage ML sweep (main)"
+	@echo "  benchmark    09 published panel comparison"
+	@echo "  overlap      10 panel rsID conversion + overlap"
+	@echo "  results      11 figures + tables"
+	@echo ""
+	@echo "Housekeeping:"
+	@echo "  clean-sweep  Delete Stage 2/3 cache (forces re-run of 08 from Stage 2)"
+	@echo "  clean-stamps Reset all stamps (re-runs all notebooks, keeps outputs)"
+	@echo "  clean        Delete stamps + all pipeline outputs"
+	@echo ""
 
 # ---------------------------------------------------------------------------
-# Pre-filtering: 01 → 02 → 03
-# 03 (VCF-to-matrix) is a shared dependency for both FST and statistical paths
+# Stage: Pre-filtering (01 → 02 → 03)
 # ---------------------------------------------------------------------------
-prefilter: $(STAMP_PREFILTER)
+prefilter: $(S_PREFILTER)
 
-$(STAMP_PREFILTER): $(STAMP_DIR)
+$(S_PREFILTER): | $(STAMP_DIR)
 	@echo "==> 01 Hard filtering..."
-	$(PYTHON) -m jupyter nbconvert --to notebook --execute \
-		--inplace $(NB_DIR)/pre-filtering/01_hard_filtering.ipynb
-	@echo "==> 02 Situational filtering..."
-	$(PYTHON) -m jupyter nbconvert --to notebook --execute \
-		--inplace $(NB_DIR)/pre-filtering/02_situational_filtering.ipynb
-	@echo "==> 03 VCF export + genotype matrix..."
-	$(PYTHON) -m jupyter nbconvert --to notebook --execute \
-		--inplace $(NB_DIR)/pre-filtering/03_vcf_to_matrix.ipynb
+	$(NB_EXEC) $(NB_DIR)/pre-filtering/01_hard_filtering.ipynb
+	@echo "==> 02 Situational filtering (HWE, LD pruning)..."
+	$(NB_EXEC) $(NB_DIR)/pre-filtering/02_situational_filtering.ipynb
+	@echo "==> 03 VCF export + genotype matrix cache..."
+	$(NB_EXEC) $(NB_DIR)/pre-filtering/03_vcf_to_matrix.ipynb
 	touch $@
 
 # ---------------------------------------------------------------------------
-# FST path: 04 FST selection + PCA
+# Stage: FST path (04b FST/PCA + 05b FST-only ML)
 # ---------------------------------------------------------------------------
-fst: $(STAMP_FST)
+fst: $(S_FST)
 
-$(STAMP_FST): $(STAMP_PREFILTER)
-	@echo "==> 04 FST selection and PCA..."
-	$(PYTHON) -m jupyter nbconvert --to notebook --execute \
-		--inplace $(NB_DIR)/fst/04b_fst_and_pca.ipynb
+$(S_FST): $(S_PREFILTER)
+	@echo "==> 04b FST selection and PCA..."
+	$(NB_EXEC) $(NB_DIR)/fst/04b_fst_and_pca.ipynb
+	@echo "==> 05b FST-only ML training..."
+	$(NB_EXEC) $(NB_DIR)/fst/05b_fst_only_training.ipynb
 	touch $@
 
 # ---------------------------------------------------------------------------
-# Statistical path: 04a selection
+# Stage: Statistical path (04a selection + 05a ML)
 # ---------------------------------------------------------------------------
-stat: $(STAMP_STAT)
+stat: $(S_STAT)
 
-$(STAMP_STAT): $(STAMP_PREFILTER)
-	@echo "==> 04a Statistical SNP selection..."
-	$(PYTHON) -m jupyter nbconvert --to notebook --execute \
-		--inplace $(NB_DIR)/statistical_v1/04a_snp_selection.ipynb
+$(S_STAT): $(S_PREFILTER)
+	@echo "==> 04a Statistical SNP selection (chi2, dAF, JSD)..."
+	$(NB_EXEC) $(NB_DIR)/statistical/04a_snp_selection.ipynb
+	@echo "==> 05a Stat-only ML training..."
+	$(NB_EXEC) $(NB_DIR)/statistical/05a_stat_training.ipynb
 	touch $@
 
 # ---------------------------------------------------------------------------
-# ML training: three variants
+# Stage: FST+stat consensus (05c — needs both paths)
 # ---------------------------------------------------------------------------
-ml: $(STAMP_ML_FST) $(STAMP_ML_BOTH) $(STAMP_ML_STAT)
+fst_stat: $(S_FSTSTAT)
 
-$(STAMP_ML_FST): $(STAMP_FST)
-	@echo "==> 05b ML training (FST-only)..."
-	$(PYTHON) -m jupyter nbconvert --to notebook --execute \
-		--inplace $(NB_DIR)/fst/05b_fst_only_training.ipynb
-	touch $@
-
-$(STAMP_ML_BOTH): $(STAMP_FST) $(STAMP_STAT)
-	@echo "==> 05c ML training (FST + statistical)..."
-	$(PYTHON) -m jupyter nbconvert --to notebook --execute \
-		--inplace $(NB_DIR)/statistical_v1/05c_fst_and_stat_training.ipynb
-	touch $@
-
-$(STAMP_ML_STAT): $(STAMP_STAT)
-	@echo "==> 05a ML training (statistical-only)..."
-	$(PYTHON) -m jupyter nbconvert --to notebook --execute \
-		--inplace $(NB_DIR)/statistical_v1/05a_stat_only_training.ipynb
+$(S_FSTSTAT): $(S_FST) $(S_STAT)
+	@echo "==> 05c FST+stat consensus ML training..."
+	$(NB_EXEC) $(NB_DIR)/statistical/05c_fst_stat_training.ipynb
 	touch $@
 
 # ---------------------------------------------------------------------------
-# Evaluation: 06
+# Stage: Unified 3-stage ML sweep (08)
 # ---------------------------------------------------------------------------
-eval: $(STAMP_EVAL)
+sweep: $(S_SWEEP)
 
-$(STAMP_EVAL): $(STAMP_ML_FST) $(STAMP_ML_BOTH) $(STAMP_ML_STAT)
-	@echo "==> 06 Model evaluation..."
-	$(PYTHON) -m jupyter nbconvert --to notebook --execute \
-		--inplace $(NB_DIR)/06_model_evaluation.ipynb
-	$(PYTHON) -m jupyter nbconvert --to notebook --execute \
-		--inplace $(NB_DIR)/06b_stat_evaluation.ipynb
+$(S_SWEEP): $(S_FST) $(S_STAT) $(S_FSTSTAT)
+	@echo "==> 08 Unified panel sweep (3-stage, ~30 min)..."
+	$(NB_EXEC) $(NB_DIR)/self_evaluation/08_unified_panel_sweep.ipynb
+	touch $@
+
+# ---------------------------------------------------------------------------
+# Stage: Published panel benchmarking (09)
+# ---------------------------------------------------------------------------
+benchmark: $(S_BENCHMARK)
+
+$(S_BENCHMARK): $(S_SWEEP)
+	@echo "==> 09 Published panel comparison..."
+	$(NB_EXEC) $(NB_DIR)/self_evaluation/09_published_panel_comparison.ipynb
+	touch $@
+
+# ---------------------------------------------------------------------------
+# Stage: Panel rsID conversion + overlap (10)
+# ---------------------------------------------------------------------------
+overlap: $(S_OVERLAP)
+
+$(S_OVERLAP): $(S_SWEEP)
+	@echo "==> 10 Panel overlap and rsID map..."
+	$(NB_EXEC) $(NB_DIR)/self_evaluation/10_panel_overlap.ipynb
+	touch $@
+
+# ---------------------------------------------------------------------------
+# Stage: Results — all figures and tables (11)
+# ---------------------------------------------------------------------------
+results: $(S_RESULTS)
+
+$(S_RESULTS): $(S_BENCHMARK) $(S_OVERLAP)
+	@echo "==> 11 Generating figures and tables..."
+	$(NB_EXEC) $(NB_DIR)/self_evaluation/11_results.ipynb
 	touch $@
 
 # ---------------------------------------------------------------------------
 # Housekeeping
 # ---------------------------------------------------------------------------
+clean-sweep:
+	rm -f $(SWEEP_DIR)/stage2_results.csv \
+	      $(SWEEP_DIR)/stage2_agg.csv \
+	      $(SWEEP_DIR)/stage2_best.csv \
+	      $(SWEEP_DIR)/stage3_results.csv \
+	      $(SWEEP_DIR)/our_panels_oofpreds.pkl
+	rm -f $(S_SWEEP) $(S_BENCHMARK) $(S_RESULTS)
+	@echo "Stage 2/3 cache cleared. Run 'make sweep' or 'make all' to re-run."
+
 clean-stamps:
 	rm -rf $(STAMP_DIR)
-	@echo "Stamps cleared. Next 'make all' will re-run all stages."
+	@echo "All stamps cleared. Next 'make all' will re-execute all notebooks."
 
 clean: clean-stamps
-	rm -rf $(CACHE) $(OUTPUTS)
-	@echo "cache/ and outputs/ deleted."
-
-clean-cache: clean-stamps
-	rm -rf $(CACHE)
-	@echo "cache/ deleted (outputs preserved)."
+	rm -rf $(OUTPUTS)
+	@echo "Stamps and outputs/ deleted."

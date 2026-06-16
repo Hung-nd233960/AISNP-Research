@@ -66,7 +66,7 @@ This is a deliberately hard classification problem — all three groups belong t
 
 ## Step 1 — Quality Filtering
 
-Applied sequentially using plink2 (Weir-Cockerham estimator, 16 threads).
+Applied sequentially using plink2 (16 threads).
 
 | Filter | Threshold | Purpose |
 |---|---|---|
@@ -98,7 +98,7 @@ Top-500 SNPs per retained test → union → **1,005 unique SNPs**.
 
 ### FST block (FST — 2,508 SNPs)
 
-Weir-Cockerham FST computed pairwise across all three population pairs (Han↔JPT, Han↔SEA, JPT↔SEA) using plink2. Top-1,000 per pair → union → **2,508 SNPs**.
+Hudson FST computed pairwise across all three population pairs (Han↔JPT, Han↔SEA, JPT↔SEA) using plink2. Top-1,000 per pair → union → **2,508 SNPs**.
 
 FST normalises by heterozygosity and upweights rare, drift-fixed variants. δAF treats all allele frequencies equally — the two approaches capture partly orthogonal signal.
 

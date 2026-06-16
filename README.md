@@ -74,7 +74,7 @@ AISNP_Research/
 │   │   └── analysis/test_evaluation.ipynb
 │   │
 │   ├── fst/
-│   │   ├── 04b_fst_and_pca.ipynb         # Weir-Cockerham FST, PCA
+│   │   ├── 04b_fst_and_pca.ipynb         # Hudson FST, PCA
 │   │   └── 05b_fst_only_training.ipynb   # FST candidate set (2,508 SNPs)
 │   │
 │   └── self_evaluation/
@@ -175,7 +175,7 @@ bash scripts/vcf_preprocessing.sh <vcf_dir> <output_prefix> [threads] [memory_mb
 | Pool | Construction | Size |
 |------|-------------|------|
 | **stat** | Union of top-500 per test (χ², δAF, JSD) | 1,005 |
-| **FST** | Union of top-1,000 per pairwise Weir-Cockerham FST | 2,508 |
+| **FST** | Union of top-1,000 per pairwise Hudson FST | 2,508 |
 | **fst_stat** | Intersection of stat and FST | 1,003 |
 
 ### Three-Stage ML Sweep (notebook 08)

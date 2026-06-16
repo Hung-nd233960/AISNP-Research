@@ -34,7 +34,7 @@ A preliminary evaluation (`test_evaluation` notebook) compared all candidate sta
 
 ### 2.2.2 FST Block
 
-Wright's fixation index (F_ST) measures the proportion of total genetic variance attributable to differences between subpopulations. We computed pairwise Weir-Cockerham F_ST between all three population pairs (Han vs. JPT, Han vs. SEA, JPT vs. SEA) using plink2. The top-1,000 SNPs from each pairwise comparison were pooled into a union set, forming the **FST block: 2,508 SNPs**.
+Wright's fixation index (F_ST) measures the proportion of total genetic variance attributable to differences between subpopulations. We computed pairwise Hudson F_ST (Bhatia et al. 2013) between all three population pairs (Han vs. JPT, Han vs. SEA, JPT vs. SEA) using plink2. The top-1,000 SNPs from each pairwise comparison were pooled into a union set, forming the **FST block: 2,508 SNPs**.
 
 ### 2.2.3 Combined Block (fst_stat)
 

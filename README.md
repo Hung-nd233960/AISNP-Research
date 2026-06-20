@@ -2,7 +2,13 @@
 
 **P**anel for **A**ISNP-based **A**Ncestry **D**iscovery & **A**ssessment — **E**ast **A**sian
 
+Repository: <https://github.com/Hung-nd233960/PAANDA-EA>
+
 Automated selection and validation of Ancestry-Informative SNPs (AISNPs) for within-East-Asian population discrimination (Han / JPT / SEA) using 1000 Genomes Project Phase 3 data.
+
+```bash
+git clone https://github.com/Hung-nd233960/PAANDA-EA.git
+```
 
 ## Overview
 

@@ -9,7 +9,7 @@ This pipeline analyzes East Asian (EAS) subpopulations (CHB, JPT, KHV) from the 
 ## Project Structure
 
 ```
-BioinfoMidterm/
+PAANDA-EA/
 ├── scripts/                    # Python modules and bash scripts
 │   ├── config.py              # Centralized configuration
 │   ├── utils.py               # Shared utilities

@@ -1,4 +1,6 @@
-# Ancestry-Informative SNP Selection Pipeline
+# PAANDA-EA
+
+**P**anel for **A**ISNP-based **A**Ncestry **D**iscovery & **A**ssessment — **E**ast **A**sian
 
 Automated selection and validation of Ancestry-Informative SNPs (AISNPs) for within-East-Asian population discrimination (Han / JPT / SEA) using 1000 Genomes Project Phase 3 data.
 
@@ -49,9 +51,9 @@ Given 504 EAS individuals across three subpopulations, the pipeline finds the sm
 
 | Panel | N | Accuracy (5-fold CV) |
 |-------|---|---------------------|
-| Ours (stat + ElasticNet) | 35 | ~92% |
-| Ours (stat + ElasticNet) | 50 | ~93% |
-| Ours (stat + ElasticNet) | 70 | ~95% |
+| PAANDA-EA (stat + ElasticNet) | 35 | ~92% |
+| PAANDA-EA (stat + ElasticNet) | 50 | ~93% |
+| PAANDA-EA (stat + ElasticNet) | 70 | ~95% |
 | Cai et al. 2024 (EAS-specific) | 34 | ~94.6% |
 | Cao et al. 2022 | 14 matched / 19 | ~82% |
 | Shi et al. 2019 | 116 matched / 142 | ~79% |

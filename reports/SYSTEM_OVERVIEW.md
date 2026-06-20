@@ -1,4 +1,6 @@
-# AISNP Selection Pipeline — System Overview
+# PAANDA-EA — System Overview
+
+**P**anel for **A**ISNP-based **A**Ncestry **D**iscovery & **A**ssessment — **E**ast **A**sian
 
 ## Problem Statement
 
@@ -168,7 +170,7 @@ SNPs extracted from MAF-filtered pre-LD-pruning plink data (22M SNPs) to maximis
 
 ### Key comparison finding
 
-Cai's expert-curated panel achieves ~94.6% on our cohort — **classifier-agnostic** (all 6 classifiers score similarly). Our automated panels show greater variance across classifiers but achieve higher peak accuracy at N ≥ 50. The crossover is around N = 50–55.
+Cai's expert-curated panel achieves ~94.6% on our cohort — **classifier-agnostic** (all 6 classifiers score similarly). PAANDA-EA panels show greater variance across classifiers but achieve higher peak accuracy at N ≥ 50. The crossover is around N = 50–55.
 
 Cai's higher score on our cohort vs their published 92% is attributable to cohort composition differences: our 1000 Genomes 504-sample EAS subset is more homogeneous than the broader cohort Cai likely used.
 
@@ -176,7 +178,7 @@ Cai's higher score on our cohort vs their published 92% is attributable to cohor
 
 ## SNP Overlap
 
-Our committed panels (N=35/50/70) converted to rsIDs via MyVariant.info. Set intersection with all published panels:
+PAANDA-EA committed panels (N=35/50/70) converted to rsIDs via MyVariant.info. Set intersection with all published panels:
 
 - **vs Cai**: 7–8 shared SNPs (notable given orthogonal selection methods)
 - **vs Cao**: 2–3 shared SNPs
@@ -195,6 +197,6 @@ Our committed panels (N=35/50/70) converted to rsIDs via MyVariant.info. Set int
 | Stage 1 sweep | 9 pool×reductor configs | Best config per N → stat+ElasticNet |
 | Stage 2 sweep | 6 classifiers | Performance curve N=5→100; best clf per N |
 | Stage 3 commit | 80/20 split | Final panels: N=35 / N=50 / N=70 |
-| Benchmarking | 3 published panels | Cai~94.6%, our N=35~92%, crossover at N≈50 |
+| Benchmarking | 3 published panels | Cai~94.6%, PAANDA-EA N=35~92%, crossover at N≈50 |
 
 **Main finding**: Automated selection via stat+ElasticNet reaches expert-curated panel accuracy (~94%) at N≈50 without any domain-specific curation, and exceeds it at N≥55.

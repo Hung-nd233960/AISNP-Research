@@ -100,8 +100,8 @@ Panel files saved as `panels/panel_N{N:03d}.csv` (rank, SNP ID, reductor score).
 
 Three published AISNP panels were collected for benchmarking: Shi et al. 2019 (four nested panels: 36/59/98/142 SNPs), Cai et al. 2024 (34 EAS-specific SNPs), and Cao et al. 2022 (19 SNPs). Published panel SNPs were mapped to genomic coordinates via the MyVariant.info batch API and extracted from our MAF-filtered pre-LD-pruning genotype data; match rates are reported alongside nominal panel sizes throughout.
 
-Each matched panel was evaluated using the same six-classifier suite and 5-fold stratified cross-validation protocol described in Section 2.3.2, enabling direct metric comparison. Two caveats apply: (a) our panels carry in-sample optimism as they were selected from the same 504 individuals, while published panels are external; (b) published panels evaluated on fewer than their nominal SNP count (due to match rate < 100%) may underperform relative to their original reported accuracy.
+Each matched panel was evaluated using the same six-classifier suite and 5-fold stratified cross-validation protocol described in Section 2.3.2, enabling direct metric comparison. Two caveats apply: (a) the PAANDA-EA panels carry in-sample optimism as they were selected from the same 504 individuals, while published panels are external; (b) published panels evaluated on fewer than their nominal SNP count (due to match rate < 100%) may underperform relative to their original reported accuracy.
 
 ### 2.4.2 Panel Overlap Analysis
 
-Our committed panels (N=35, N=50, N=70) were converted from internal SNP IDs to rsIDs via MyVariant.info. Set intersections were computed between all panels (ours and the three published sources). Shared SNP loci were annotated using GeneCards and OMIM to characterise any known trait or disease associations.
+The PAANDA-EA committed panels (N=35, N=50, N=70) were converted from internal SNP IDs to rsIDs via MyVariant.info. Set intersections were computed between all panels (PAANDA-EA and the three published sources). Shared SNP loci were annotated using GeneCards and OMIM to characterise any known trait or disease associations.

@@ -1,4 +1,4 @@
-# 1000 Genomes EAS Population Classification Pipeline
+# PAANDA-EA — 1000 Genomes EAS Population Classification Pipeline
 
 A modular bioinformatics pipeline for population classification using SNP data from the 1000 Genomes Project.
 

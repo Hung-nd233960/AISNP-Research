@@ -65,7 +65,7 @@ Given 504 EAS individuals across three subpopulations, the pipeline finds the sm
 | Shi et al. 2019 | 116 matched / 142 | ~79% | ~79% |
 
 ¹ Candidate pool selected on all 504 samples (optimistic — see `reports/METHODOLOGY.md` §2.3.1).
-² Nested CV with the whole selection chain rebuilt inside each fold (notebook 08b / `make compare-nested`). Published panels are external, so their numbers are unchanged and directly comparable to the leak-free column.
+² Nested CV with the whole selection chain rebuilt inside each fold (notebook 08b / `make compare-nested`). Published panels are external, so their numbers are unchanged and directly comparable to the leak-free column. Full leak-free analysis, winner-consistency stats, and recommendations: **`reports/NESTED_CV_MASTER_REPORT.md`**. Note the FST pool overtakes the stat pool for large panels (N≥65): FST+EN+SVM-RBF reaches ~94% at N=70, ~level with Cai-34.
 
 ## Project Structure
 

@@ -115,6 +115,8 @@ The published panels (Cai/Cao/Shi) are external SNP sets and carry no selection 
 
 *Committed SNP lists are unchanged:* the shipped panels may legitimately be selected on all 504 samples — only the reported accuracy *estimate* must be leak-free, and that is what §2.3.4 provides.
 
+A full leak-free grid (N=5–100 × 3 pools × 3 reducers × 6 classifiers × 5 folds) was also run to identify the most consistent configuration. **ElasticNet is the decisive reducer** (56/90 fold-wins). The best *pool* is panel-size dependent — the stat pool wins at N≤55, the FST pool at N≥65 (e.g. FST+EN+SVM-RBF reaches 94.25% at N=70, level with external Cai-34 at 94.6%). Classifiers span only ~2.6 points, so one should be pre-specified rather than max-selected. Full analysis, figures and the recommended narrative: **`reports/NESTED_CV_MASTER_REPORT.md`**.
+
 ---
 
 ## 2.4 Benchmarking Against Published Panels

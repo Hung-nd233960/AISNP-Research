@@ -73,8 +73,11 @@ def fit_reductor(rname, X_tr, y_tr):
     raise ValueError(rname)
 
 
-def make_classifiers():
-    """name -> (template, needs_scale). Fresh templates (clone before fit)."""
+def make_classifiers(proba=True):
+    """name -> (template, needs_scale). Fresh templates (clone before fit).
+
+    proba=False drops SVM probability estimation (much faster; no ROC-AUC).
+    """
     return {
         "RF": (RandomForestClassifier(n_estimators=100, max_depth=10,
                                       random_state=RANDOM_STATE, n_jobs=-1), False),
@@ -82,8 +85,8 @@ def make_classifiers():
                               subsample=0.8, random_state=RANDOM_STATE,
                               n_jobs=-1, verbosity=0), False),
         "LR": (LogisticRegression(max_iter=1000, random_state=RANDOM_STATE), True),
-        "SVM_RBF": (SVC(kernel="rbf", probability=True, random_state=RANDOM_STATE), True),
-        "SVM_Lin": (SVC(kernel="linear", probability=True, random_state=RANDOM_STATE), True),
+        "SVM_RBF": (SVC(kernel="rbf", probability=proba, random_state=RANDOM_STATE), True),
+        "SVM_Lin": (SVC(kernel="linear", probability=proba, random_state=RANDOM_STATE), True),
         "GBM": (GradientBoostingClassifier(n_estimators=100, max_depth=5,
                                            random_state=RANDOM_STATE), False),
     }
@@ -309,10 +312,69 @@ def run_tier_a(data: Data, ns, classifiers_subset=None):
 
 
 # --------------------------------------------------------------------------
+# Full leak-free grid — every N x panel x reductor x classifier, per fold
+# --------------------------------------------------------------------------
+
+def run_grid(data: Data, out_csv: Path, ns=PANEL_SIZES,
+             panels=PANELS, reductors=REDUCTORS):
+    """Leak-free 5-fold CV accuracy for every config, recorded per fold.
+
+    Pools are rebuilt per fold (in-fold selection). Reductor importances are
+    cached per (fold, panel, reductor) and sliced for each N. SVMs run without
+    probability (accuracy/F1/MCC only) for speed. Writes long-form CSV
+    incrementally (after each N) so a crash preserves progress.
+    """
+    clsf = make_classifiers(proba=False)
+    skf = StratifiedKFold(n_splits=N_CV, shuffle=True, random_state=RANDOM_STATE)
+    G, y = data.G, data.y
+    folds = list(skf.split(G, y))
+
+    # Per-fold pools + per-(fold,panel,reductor) importances (N-independent)
+    pool_cache, Xtr_cache, Xte_cache, red_cache = {}, {}, {}, {}
+    for fi, (tr, te) in enumerate(folds):
+        t0 = time.time()
+        pools = data.build_pools(tr, which=panels)
+        pool_cache[fi] = pools
+        for panel, cols in pools.items():
+            Xtr_cache[(fi, panel)] = G[tr][:, cols].astype(np.float32)
+            Xte_cache[(fi, panel)] = G[te][:, cols].astype(np.float32)
+            for r in reductors:
+                red_cache[(fi, panel, r)] = fit_reductor(r, Xtr_cache[(fi, panel)], y[tr])
+        print(f"  fold {fi+1}/{N_CV}: pools+reductors in {time.time()-t0:.1f}s")
+
+    records = []
+    for N in ns:
+        t0 = time.time()
+        for panel in panels:
+            for r in reductors:
+                for fi, (tr, te) in enumerate(folds):
+                    imp, scaler = red_cache[(fi, panel, r)]
+                    top = np.argsort(imp)[::-1][:N]
+                    Xtr_p, Xte_p = Xtr_cache[(fi, panel)], Xte_cache[(fi, panel)]
+                    for cname, (ctmpl, needs_scale) in clsf.items():
+                        if needs_scale:
+                            A = scaler.transform(Xtr_p)[:, top]
+                            B = scaler.transform(Xte_p)[:, top]
+                        else:
+                            A, B = Xtr_p[:, top], Xte_p[:, top]
+                        clf = clone(ctmpl); clf.fit(A, y[tr])
+                        yp = clf.predict(B)
+                        records.append({
+                            "n_snps": N, "panel": panel, "reductor": r,
+                            "classifier": cname, "fold": fi,
+                            "acc": accuracy_score(y[te], yp),
+                            "f1": f1_score(y[te], yp, average="weighted"),
+                            "mcc": matthews_corrcoef(y[te], yp),
+                        })
+        pd.DataFrame(records).to_csv(out_csv, index=False)  # incremental save
+        print(f"  N={N:3d} done in {time.time()-t0:.1f}s "
+              f"({len(panels)*len(reductors)*len(clsf)} configs)")
+    return pd.DataFrame(records)
+
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--tier", choices=["B", "A", "both"], default="B")
+    ap.add_argument("--tier", choices=["B", "A", "both", "grid", "all"], default="B")
     ap.add_argument("--ns", default="", help="comma list of N (default: full curve / committed for A)")
     args = ap.parse_args()
 
@@ -322,6 +384,12 @@ def main():
     baseline_dir = (Path(__file__).resolve().parent.parent
                     / "results_archive/baseline_leaky_v1/self_evaluation/08_unified_panel_sweep")
 
+    if args.tier in ("grid", "all"):
+        ns = [int(x) for x in args.ns.split(",")] if args.ns else PANEL_SIZES
+        print("=" * 70, "\nGRID — full leak-free CV (all N x panel x reductor x classifier)\n", "=" * 70)
+        df = run_grid(data, out_dir / "grid_results.csv", ns)
+        print(f"Saved: {out_dir / 'grid_results.csv'}  ({len(df)} rows)")
+
     if args.tier in ("B", "both"):
         ns = [int(x) for x in args.ns.split(",")] if args.ns else PANEL_SIZES
         print("=" * 70, "\nTIER B — isolate leak (baseline config, in-fold pools)\n", "=" * 70)
@@ -330,8 +398,11 @@ def main():
         df.to_csv(p, index=False)
         print(f"Saved: {p}")
 
-    if args.tier in ("A", "both"):
-        ns = [int(x) for x in args.ns.split(",")] if args.ns else [35, 50, 70]
+    if args.tier in ("A", "both", "all"):
+        if args.ns:
+            ns = [int(x) for x in args.ns.split(",")]
+        else:
+            ns = PANEL_SIZES if args.tier == "all" else [35, 50, 70]
         print("=" * 70, "\nTIER A — fully nested (inner-CV config selection)\n", "=" * 70)
         df = run_tier_a(data, ns)
         agg = (df.groupby(["n_snps"])

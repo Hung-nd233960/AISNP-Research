@@ -1,0 +1,32 @@
+PLINK v2.0.0-a.6.9LM 64-bit Intel (29 Jan 2025)
+Options in effect:
+  --export A
+  --extract /mnt/data/aisnp_data/1000genomes/outputs/self_evaluation/09_published_panel_comparison/matched_snp_ids.txt
+  --keep /mnt/data/aisnp_data/1000genomes/outputs/02_situational_filtering/SEA_JPT_CN_LD_pruned.psam
+  --memory 8000
+  --out /mnt/data/aisnp_data/1000genomes/outputs/self_evaluation/09_published_panel_comparison/published_panels_geno
+  --pfile /mnt/data/aisnp_data/1000genomes/outputs/01_hard_filtering/SEA_JPT_CN_MAF_filtered
+  --threads 8
+
+Hostname: ibmelabC05
+Working directory: /home/ibmelab/Projects/AISNP_Research
+Start time: Sun Jun  7 19:48:46 2026
+
+Random number seed: 1780836526
+15186 MiB RAM detected, ~5418 available; reserving 5354 MiB for main workspace.
+Using up to 8 compute threads.
+504 samples (0 females, 0 males, 504 ambiguous; 504 founders) loaded from
+/mnt/data/aisnp_data/1000genomes/outputs/01_hard_filtering/SEA_JPT_CN_MAF_filtered.psam.
+21981924 variants loaded from
+/mnt/data/aisnp_data/1000genomes/outputs/01_hard_filtering/SEA_JPT_CN_MAF_filtered.pvar.
+Note: No phenotype data present.
+--extract: 182 variants remaining.
+--keep: 504 samples remaining.
+504 samples (0 females, 0 males, 504 ambiguous; 504 founders) remaining after
+main filters.
+182 variants remaining after main filters.
+--export A:
+/mnt/data/aisnp_data/1000genomes/outputs/self_evaluation/09_published_panel_comparison/published_panels_geno.raw
+written.
+
+End time: Sun Jun  7 19:49:05 2026

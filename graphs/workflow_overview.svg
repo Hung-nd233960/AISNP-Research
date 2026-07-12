@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="560" viewBox="0 0 1040 560" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L9,4 L0,8 Z" fill="#37474f"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect width="1040" height="560" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="520" y="44" text-anchor="middle" font-size="24" font-weight="bold" fill="#263238">PAANDA-EA Workflow</text>
+  <text x="520" y="68" text-anchor="middle" font-size="14" fill="#607d8b">1000 Genomes Phase 3 · 504 EAS samples · Han / JPT / SEA</text>
+
+  <!-- ============ Block 1: QC ============ -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="100" width="280" height="380" rx="12" fill="#e3f2fd" stroke="#1565c0" stroke-width="2.5"/>
+  </g>
+  <rect x="60" y="100" width="280" height="56" rx="12" fill="#1565c0"/>
+  <rect x="60" y="138" width="280" height="18" fill="#1565c0"/>
+  <text x="200" y="127" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">1 · Quality Control</text>
+  <text x="200" y="148" text-anchor="middle" font-size="12" fill="#bbdefb">QC</text>
+
+  <g font-size="14" fill="#0d47a1">
+    <rect x="84" y="178" width="232" height="50" rx="7" fill="#ffffff" stroke="#90caf9"/>
+    <text x="100" y="200" font-weight="bold">Hard filtering</text>
+    <text x="100" y="219" font-size="12" fill="#37474f">MAF · call rate · biallelic</text>
+
+    <rect x="84" y="240" width="232" height="50" rx="7" fill="#ffffff" stroke="#90caf9"/>
+    <text x="100" y="262" font-weight="bold">Situational filtering</text>
+    <text x="100" y="281" font-size="12" fill="#37474f">HWE · LD pruning</text>
+
+    <rect x="84" y="302" width="232" height="50" rx="7" fill="#ffffff" stroke="#90caf9"/>
+    <text x="100" y="324" font-weight="bold">VCF → genotype matrix</text>
+    <text x="100" y="343" font-size="12" fill="#37474f">cached numeric matrix</text>
+  </g>
+  <rect x="84" y="408" width="232" height="48" rx="7" fill="#1565c0"/>
+  <text x="200" y="430" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Output</text>
+  <text x="200" y="448" text-anchor="middle" font-size="13" fill="#bbdefb">614,759 SNPs retained</text>
+
+  <!-- Arrow 1 -->
+  <line x1="342" y1="290" x2="378" y2="290" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- ============ Block 2: Statistical Filter ============ -->
+  <g filter="url(#shadow)">
+    <rect x="380" y="100" width="280" height="380" rx="12" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2.5"/>
+  </g>
+  <rect x="380" y="100" width="280" height="56" rx="12" fill="#2e7d32"/>
+  <rect x="380" y="138" width="280" height="18" fill="#2e7d32"/>
+  <text x="520" y="127" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">2 · Statistical Filter</text>
+  <text x="520" y="148" text-anchor="middle" font-size="12" fill="#c8e6c9">candidate set construction</text>
+
+  <g font-size="14" fill="#1b5e20">
+    <rect x="404" y="178" width="232" height="50" rx="7" fill="#ffffff" stroke="#a5d6a7"/>
+    <text x="420" y="200" font-weight="bold">Per-SNP ranking</text>
+    <text x="420" y="219" font-size="12" fill="#37474f">&#967;&#178; · &#948;AF · JSD</text>
+
+    <rect x="404" y="240" width="232" height="50" rx="7" fill="#ffffff" stroke="#a5d6a7"/>
+    <text x="420" y="262" font-weight="bold">F&#x2092;&#x209B;&#x209C; differentiation</text>
+    <text x="420" y="281" font-size="12" fill="#37474f">Hudson F&#x209B;&#x209C; · PCA</text>
+
+    <rect x="404" y="302" width="232" height="50" rx="7" fill="#ffffff" stroke="#a5d6a7"/>
+    <text x="420" y="324" font-weight="bold">Candidate pools</text>
+    <text x="420" y="343" font-size="12" fill="#37474f">stat · fst · fst_stat</text>
+  </g>
+  <rect x="404" y="408" width="232" height="48" rx="7" fill="#2e7d32"/>
+  <text x="520" y="430" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Output</text>
+  <text x="520" y="448" text-anchor="middle" font-size="12" fill="#c8e6c9">stat 1,005 · fst 2,508 · fst_stat 1,003</text>
+
+  <!-- Arrow 2 -->
+  <line x1="662" y1="290" x2="698" y2="290" stroke="#37474f" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- ============ Block 3: Dimension Reduction ============ -->
+  <g filter="url(#shadow)">
+    <rect x="700" y="100" width="280" height="380" rx="12" fill="#fff3e0" stroke="#e65100" stroke-width="2.5"/>
+  </g>
+  <rect x="700" y="100" width="280" height="56" rx="12" fill="#e65100"/>
+  <rect x="700" y="138" width="280" height="18" fill="#e65100"/>
+  <text x="840" y="127" text-anchor="middle" font-size="20" font-weight="bold" fill="#ffffff">3 · Dimension Reduction</text>
+  <text x="840" y="148" text-anchor="middle" font-size="12" fill="#ffe0b2">panel selection</text>
+
+  <g font-size="14" fill="#bf360c">
+    <rect x="724" y="178" width="232" height="50" rx="7" fill="#ffffff" stroke="#ffcc80"/>
+    <text x="740" y="200" font-weight="bold">Reductors</text>
+    <text x="740" y="219" font-size="12" fill="#37474f">ElasticNet · L1 · tree importance</text>
+
+    <rect x="724" y="240" width="232" height="50" rx="7" fill="#ffffff" stroke="#ffcc80"/>
+    <text x="740" y="262" font-weight="bold">Pool &#215; reductor sweep</text>
+    <text x="740" y="281" font-size="12" fill="#37474f">9 configs · 6 classifiers</text>
+
+    <rect x="724" y="302" width="232" height="50" rx="7" fill="#ffffff" stroke="#ffcc80"/>
+    <text x="740" y="324" font-weight="bold">Panel commitment</text>
+    <text x="740" y="343" font-size="12" fill="#37474f">80/20 split · CV</text>
+  </g>
+  <rect x="724" y="408" width="232" height="48" rx="7" fill="#e65100"/>
+  <text x="840" y="430" text-anchor="middle" font-size="13" fill="#ffffff" font-weight="bold">Output</text>
+  <text x="840" y="448" text-anchor="middle" font-size="13" fill="#ffe0b2">minimal AISNP panel (35–70)</text>
+
+  <!-- Footer -->
+  <text x="520" y="520" text-anchor="middle" font-size="12" fill="#90a4ae">QC &#8594; Statistical Filter &#8594; Dimension Reduction</text>
+</svg>

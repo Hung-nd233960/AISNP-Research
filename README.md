@@ -55,14 +55,17 @@ Given 504 EAS individuals across three subpopulations, the pipeline finds the sm
 
 ### Key Results
 
-| Panel | N | Accuracy (5-fold CV) |
-|-------|---|---------------------|
-| PAANDA-EA (stat + ElasticNet) | 35 | ~92% |
-| PAANDA-EA (stat + ElasticNet) | 50 | ~93% |
-| PAANDA-EA (stat + ElasticNet) | 70 | ~95% |
-| Cai et al. 2024 (EAS-specific) | 34 | ~94.6% |
-| Cao et al. 2022 | 14 matched / 19 | ~82% |
-| Shi et al. 2019 | 116 matched / 142 | ~79% |
+| Panel | N | Leaky CV¹ | Leak-free CV² |
+|-------|---|-----------|---------------|
+| PAANDA-EA (stat + ElasticNet) | 35 | ~92% | ~86% |
+| PAANDA-EA (stat + ElasticNet) | 50 | ~93% | ~92% |
+| PAANDA-EA (stat + ElasticNet) | 70 | ~95% | ~92% |
+| Cai et al. 2024 (EAS-specific) | 34 | ~94.6% | ~94.6% |
+| Cao et al. 2022 | 14 matched / 19 | ~82% | ~82% |
+| Shi et al. 2019 | 116 matched / 142 | ~79% | ~79% |
+
+¹ Candidate pool selected on all 504 samples (optimistic — see `reports/METHODOLOGY.md` §2.3.1).
+² Nested CV with the whole selection chain rebuilt inside each fold (notebook 08b / `make compare-nested`). Published panels are external, so their numbers are unchanged and directly comparable to the leak-free column.
 
 ## Project Structure
 

@@ -42,7 +42,7 @@ S_RESULTS    := $(STAMP_DIR)/results.done      # 11 figures + tables
 
 # ---------------------------------------------------------------------------
 .PHONY: all preprocess prefilter fst stat fst_stat sweep benchmark overlap results \
-        clean-sweep clean-stamps clean help
+        nested compare-nested clean-nested clean-sweep clean-stamps clean help
 
 all: $(S_RESULTS)
 	@echo "Pipeline complete. Figures: $(OUTPUTS)/self_evaluation/11_results/"
@@ -59,6 +59,8 @@ help:
 	@echo "  stat         04a stat selection + 05a stat ML"
 	@echo "  fst_stat     05c FST+stat consensus ML"
 	@echo "  sweep        08 unified 3-stage ML sweep (main)"
+	@echo "  nested       08b leak-free nested CV (in-fold pool selection)"
+	@echo "  compare-nested  nested CV vs frozen leaky baseline (table+figure)"
 	@echo "  benchmark    09 published panel comparison"
 	@echo "  overlap      10 panel rsID conversion + overlap"
 	@echo "  results      11 figures + tables"
@@ -174,8 +176,33 @@ $(S_RESULTS): $(S_BENCHMARK) $(S_OVERLAP)
 	touch $@
 
 # ---------------------------------------------------------------------------
+# Stage: Leak-free nested CV (08b) + comparison to the leaky baseline
+#   Rebuilds the stat/FST/fst_stat pools INSIDE each CV fold (Option B: per-fold
+#   plink2 --fst), so held-out samples never influence SNP nomination. See
+#   scripts/nested_cv_sweep.py and reports/METHODOLOGY.md §2.3.
+# ---------------------------------------------------------------------------
+NESTED_DIR := $(OUTPUTS)/self_evaluation/08b_nested_cv_sweep
+CONDA_PY   := conda run --no-capture-output -n $(CONDA_ENV) python -u
+
+nested: $(NESTED_DIR)/nested_tierB_results.csv
+
+$(NESTED_DIR)/nested_tierB_results.csv: scripts/nested_cv_sweep.py \
+                                        scripts/nested_selection.py scripts/nested_fst.py
+	@echo "==> 08b Leak-free nested CV sweep (Tier B full curve + Tier A committed N)..."
+	$(CONDA_PY) scripts/nested_cv_sweep.py --tier both
+
+compare-nested: nested
+	@echo "==> Comparing leak-free nested CV vs frozen leaky baseline..."
+	$(CONDA_PY) scripts/nested_comparison.py
+	@echo "Comparison: $(NESTED_DIR)/comparison_*.{csv,png,md}"
+
+# ---------------------------------------------------------------------------
 # Housekeeping
 # ---------------------------------------------------------------------------
+clean-nested:
+	rm -rf $(NESTED_DIR)
+	@echo "Nested-CV outputs cleared. Run 'make compare-nested' to regenerate."
+
 clean-sweep:
 	rm -f $(SWEEP_DIR)/stage2_results.csv \
 	      $(SWEEP_DIR)/stage2_agg.csv \

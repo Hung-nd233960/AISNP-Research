@@ -64,7 +64,9 @@ For each target panel size N ∈ {5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60,
 - **ElasticNet**: SAGA solver with L1+L2 penalty (l1_ratio=0.5); balances sparsity (L1) with coefficient stability (L2). Particularly well-suited to correlated feature sets.
 - **Random Forest importance (RF)**: Gini impurity-based mean decrease in impurity across all trees; captures non-linear interactions between SNPs.
 
-To prevent leakage, the reductor was re-fit inside each training fold of the cross-validation — the SNP ranking was never computed using held-out samples. The output of Stage 1 is the **best (candidate set, reductor) pair per N**.
+The reductor was re-fit inside each training fold of the cross-validation — the top-N SNP *ranking* was never computed using held-out samples. The output of Stage 1 is the **best (candidate set, reductor) pair per N**.
+
+> **Leakage caveat (addressed in §2.3.4).** In notebooks 04a/04b/05a/05c the candidate pools themselves (stat 1,005; FST 2,508; fst_stat 1,003) are nominated **once, from all 504 labelled samples**, before the Stage-1 cross-validation. Because that supervised filter (χ²/JSD/AFD/FST over ~615k SNPs) sees every sample, the Stage 1–3 CV folds inherit selection optimism even though the reductor step is fold-local. The Stage 2/3 numbers are therefore **not** fully leak-free. §2.3.4 re-estimates the pipeline with the entire selection chain moved inside each fold.
 
 ### 2.3.2 Stage 2 — Classifier Evaluation
 
@@ -81,7 +83,7 @@ Using the Stage-1 winning configuration for each N, we evaluated six classifiers
 
 Performance was measured across four metrics per fold: **accuracy**, **weighted F1-score**, **Matthews Correlation Coefficient (MCC)**, and **ROC-AUC** (one-vs-rest, macro-averaged). Stage 2 accuracy is the **primary reported metric** throughout this study.
 
-*Leakage disclosure*: Stage 1 configuration selection and Stage 2 classifier selection both use all 504 samples via cross-validation, introducing mild double-selection optimism. This is unavoidable at n=504 and is consistent with standard practice in small-cohort studies; we disclose it explicitly and address it in the Stage 3 hold-out.
+*Leakage disclosure*: Stage 2 accuracy carries two sources of optimism — (i) double-selection from choosing the configuration on the same CV, and (ii) candidate pools nominated on all 504 samples (§2.3.1 caveat). Both are removed in the leak-free nested cross-validation of §2.3.4, which supersedes Stage 2/3 as the reported generalisation estimate; Stage 2 is retained as the optimistic upper bound.
 
 ### 2.3.3 Stage 3 — Panel Commitment
 
@@ -91,6 +93,27 @@ Stage 3 accuracy is a single-split confirmation score. It is expected to fall 4�
 
 Primary panels committed: **N = 35, N = 50, N = 70**.
 Panel files saved as `panels/panel_N{N:03d}.csv` (rank, SNP ID, reductor score).
+
+### 2.3.4 Leak-Free Nested Cross-Validation (notebook 08b)
+
+To remove the candidate-set leakage noted in §2.3.1, we re-estimated performance with the **entire supervised selection chain rebuilt inside each cross-validation fold**: the stat pool (χ²/JSD/AFD, top-500 union), the FST pool (pairwise Hudson F_ST, top-1,000 union) and the fst_stat consensus are all nominated from the outer training fold *only*, then the reductor ranks and a classifier is trained — all before the held-out fold is touched. Per-fold F_ST is computed with `plink2 --keep <fold> --fst pop report-variants` (the same estimator used pipeline-wide, restricted to the fold's training samples), guarded by sample-alignment and variant-ID assertions. The in-fold pool builders reproduce the committed 1,005 / 2,508 / 1,003 pools exactly when run on all 504 samples.
+
+Two estimates are reported:
+
+- **Tier B (isolate the leak).** Each N uses the *baseline-committed* configuration (panel, reductor, classifier) but rebuilds its pool per fold. Directly comparable to the Stage-2 numbers; the accuracy drop is the leakage magnitude.
+- **Tier A (fully nested).** Pools are built on the outer training fold; the configuration (panel, reductor, classifier) is selected by an inner cross-validation on that training fold; the model is scored once on the untouched outer fold.
+
+Committed-panel results (5-fold CV, seed 42):
+
+| N | Config | Stage-2 (leaky) | Tier B (leak-free) | Δ |
+|---|--------|-----------------|--------------------|---|
+| 35 | stat + EN + LR | 92.26% | 86.10% | −6.16 |
+| 50 | stat + EN + SVM-RBF | 93.05% | 91.67% | −1.38 |
+| 70 | stat + EN + SVM-RBF | 95.04% | 92.46% | −2.58 |
+
+The published panels (Cai/Cao/Shi) are external SNP sets and carry no selection optimism, so the **Tier B/A numbers are the fair comparison** to them; the Stage-2 numbers modestly overstated PAANDA-EA's edge. Full curve, figure and per-N deltas: `outputs/self_evaluation/08b_nested_cv_sweep/comparison_*`.
+
+*Committed SNP lists are unchanged:* the shipped panels may legitimately be selected on all 504 samples — only the reported accuracy *estimate* must be leak-free, and that is what §2.3.4 provides.
 
 ---
 

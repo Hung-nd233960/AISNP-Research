@@ -4,3 +4,4 @@ __pycache__/
 1000genomes/
 output/
 paths.local.yaml
+reports/*.clean.md

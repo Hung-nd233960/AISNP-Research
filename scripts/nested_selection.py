@@ -2,8 +2,20 @@
 
 Rebuilds the `stat` and `fst_stat` candidate pools from a given set of samples
 (a CV training fold) using the *exact* statistics the original pipeline used, so
-that on the full cohort these functions reproduce the committed 1,005-SNP stat
-pool (04a/05a) and 1,003-SNP consensus pool (05c) bit-for-bit.
+that on the full cohort `stat_pool_indices` reproduces the committed 1,005-SNP
+stat pool (04a/05a) bit-for-bit.
+
+`fst_stat_pool_indices` intentionally does NOT reproduce the original notebook
+05c's consensus pool: 05c filtered the FST block using a different statistical
+trio (chi-squared, mutual information, pairwise KL divergence) than the stat
+pool uses (chi-squared, JSD, allele-frequency delta), with no documented reason
+for the mismatch beyond 05c's own note that running on the smaller FST-filtered
+subset is "much faster than running on the full 600k set" — a runtime remark,
+not a rationale for *which* statistics to use. That mismatched trio is treated
+here as an artifact of an older architecture, not a deliberate design choice.
+This module instead cascades the stat pool's own construction (`stat_pool_indices`)
+onto the FST block's candidates, so `fst_stat` differs from `stat` only in which
+614,759-SNP subset it starts from, not in which statistics it applies.
 
 The FST pool itself comes from `nested_fst.fst_pool_for_samples` (plink2 --keep).
 
@@ -17,9 +29,6 @@ from typing import Dict, List, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
-from statsmodels.stats.multitest import fdrcorrection
-
-from stats import compute_snp_stats_vectorized
 
 
 # ---------------------------------------------------------------------------
@@ -86,50 +95,27 @@ def stat_pool_indices(G: np.ndarray, pop_labels: np.ndarray, top_n: int = 500) -
 
 
 # ---------------------------------------------------------------------------
-# fst_stat pool — replicates notebook 05c consensus filter over the FST pool
+# fst_stat pool — stat-pool statistics (chi2/JSD/AFD), cascaded onto the FST
+# block's own candidates. See module docstring: this replaces an earlier
+# MI/KL-based consensus filter (notebook 05c) that used a different, and
+# undocumented-as-intentional, statistical trio than the stat pool itself.
 # ---------------------------------------------------------------------------
 
 def fst_stat_pool_indices(
     G: np.ndarray,
     pop_labels: np.ndarray,
     fst_pool_idx: Sequence[int],
-    snp_ids: Sequence[str],
+    top_n: int = 500,
 ) -> np.ndarray:
-    """05c consensus: from the FST pool, keep chi²-FDR-sig ∧ top-50% MI ∧ top-50% KL.
+    """Cascade stat_pool_indices onto the FST block's candidates only.
 
-    Falls back to >=2 tests, then chi²-only, matching 05c's cascade.
-    Returns sorted column indices into G.
+    Identical mechanism to stat_pool_indices (union of top-`top_n` by
+    chi2_stat, jsd, af_max_delta) — the only difference from the stat pool is
+    that it screens the FST block's SNPs (fst_pool_idx) instead of all
+    614,759, so `fst_stat` and `stat` use the same statistics and differ only
+    in candidate scope. Returns sorted column indices into G.
     """
-    fst_pool_idx = list(fst_pool_idx)
-    sub = G[:, fst_pool_idx]
-    col_names = [snp_ids[i] for i in fst_pool_idx]
-    df = pd.DataFrame(sub, columns=col_names)
-    df.insert(0, "pop", pop_labels)
-    df.insert(0, "sample", np.arange(len(df)))
-
-    stats_df = compute_snp_stats_vectorized(df, pd.Series(pop_labels), verbose=False)
-    # stats_df.snp_id is in col_names order → map back to G columns
-    id_to_gcol = {snp_ids[i]: i for i in fst_pool_idx}
-
-    chi2_pvals = stats_df["chi2_pvalue"].fillna(1).values
-    chi2_reject, _ = fdrcorrection(chi2_pvals, alpha=0.05)
-    top_n = max(50, len(stats_df) // 2)
-
-    sig_chi2 = set(stats_df.loc[chi2_reject, "snp_id"])
-    sig_mi = set(stats_df.nlargest(top_n, "mutual_information")["snp_id"])
-    sig_kl = set(stats_df.nlargest(top_n, "kl_divergence")["snp_id"])
-
-    from collections import Counter
-    counts = Counter(list(sig_chi2) + list(sig_mi) + list(sig_kl))
-    all3 = [s for s, c in counts.items() if c == 3]
-    ge2 = [s for s, c in counts.items() if c >= 2]
-
-    if len(all3) >= 25:
-        consensus = all3
-    elif len(ge2) >= 25:
-        consensus = ge2
-    else:
-        consensus = list(sig_chi2)
-
-    idx = sorted(id_to_gcol[s] for s in consensus if s in id_to_gcol)
-    return np.array(idx, dtype=np.int64)
+    fst_pool_idx = np.asarray(sorted(fst_pool_idx), dtype=np.int64)
+    G_fst = G[:, fst_pool_idx]
+    local_idx = stat_pool_indices(G_fst, pop_labels, top_n=top_n)
+    return np.sort(fst_pool_idx[local_idx])

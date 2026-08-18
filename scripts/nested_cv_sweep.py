@@ -129,7 +129,7 @@ class Data:
         if "FST" in which:
             pools["FST"] = fst_idx
         if "fst_stat" in which:
-            pools["fst_stat"] = fst_stat_pool_indices(G[tr_idx], y_str[tr_idx], fst_idx, self.cols)
+            pools["fst_stat"] = fst_stat_pool_indices(G[tr_idx], y_str[tr_idx], fst_idx)
         return pools
 
 

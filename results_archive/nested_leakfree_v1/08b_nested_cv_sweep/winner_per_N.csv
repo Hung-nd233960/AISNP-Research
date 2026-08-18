@@ -1,19 +1,19 @@
 n_snps,best_config,best_acc,n_tied_within_1se,tied_configs
 5,FST+EN+SVM_Lin,69.44,1,FST+EN+SVM_Lin
-10,FST+EN+SVM_RBF,75.0,10,FST+EN+LR; FST+EN+RF; FST+EN+SVM_Lin; FST+EN+SVM_RBF; FST+EN+XGB; stat+EN+LR; stat+EN+RF; stat+EN+SVM_RBF; stat+LR+SVM_RBF; stat+LR+XGB
-15,stat+EN+LR,78.77,1,stat+EN+LR
-20,stat+EN+LR,83.53,1,stat+EN+LR
+10,fst_stat+EN+SVM_RBF,75.39,11,FST+EN+LR; FST+EN+SVM_RBF; fst_stat+EN+LR; fst_stat+EN+RF; fst_stat+EN+SVM_Lin; fst_stat+EN+SVM_RBF; stat+EN+LR; stat+EN+RF; stat+EN+SVM_RBF; stat+LR+SVM_RBF; stat+LR+XGB
+15,fst_stat+EN+RF,79.37,6,fst_stat+EN+LR; fst_stat+EN+RF; fst_stat+EN+SVM_RBF; stat+EN+LR; stat+EN+RF; stat+EN+SVM_RBF
+20,stat+EN+LR,83.53,2,fst_stat+EN+LR; stat+EN+LR
 25,stat+EN+XGB,85.32,1,stat+EN+XGB
-30,stat+EN+LR,86.1,6,stat+EN+GBM; stat+EN+LR; stat+EN+RF; stat+EN+SVM_Lin; stat+EN+SVM_RBF; stat+EN+XGB
-35,stat+RF+RF,86.31,7,stat+EN+GBM; stat+EN+LR; stat+EN+SVM_Lin; stat+EN+XGB; stat+RF+LR; stat+RF+RF; stat+RF+SVM_RBF
-40,stat+EN+SVM_RBF,88.09,4,FST+RF+LR; fst_stat+RF+LR; stat+EN+SVM_Lin; stat+EN+SVM_RBF
-45,stat+EN+SVM_RBF,89.68,1,stat+EN+SVM_RBF
+30,fst_stat+EN+RF,86.89,9,fst_stat+EN+LR; fst_stat+EN+RF; fst_stat+EN+SVM_RBF; stat+EN+GBM; stat+EN+LR; stat+EN+RF; stat+EN+SVM_Lin; stat+EN+SVM_RBF; stat+EN+XGB
+35,fst_stat+EN+SVM_RBF,87.9,1,fst_stat+EN+SVM_RBF
+40,fst_stat+EN+SVM_RBF,88.89,3,fst_stat+EN+RF; fst_stat+EN+SVM_RBF; stat+EN+SVM_RBF
+45,fst_stat+EN+SVM_RBF,89.88,9,fst_stat+EN+LR; fst_stat+EN+SVM_Lin; fst_stat+EN+SVM_RBF; fst_stat+EN+XGB; fst_stat+RF+RF; fst_stat+RF+SVM_RBF; stat+EN+RF; stat+EN+SVM_RBF; stat+RF+SVM_RBF
 50,stat+EN+SVM_RBF,91.67,1,stat+EN+SVM_RBF
 55,stat+EN+SVM_RBF,92.66,1,stat+EN+SVM_RBF
-60,stat+EN+SVM_RBF,92.07,7,FST+EN+LR; FST+EN+SVM_RBF; FST+RF+LR; FST+RF+SVM_RBF; fst_stat+RF+SVM_RBF; stat+EN+RF; stat+EN+SVM_RBF
+60,stat+EN+SVM_RBF,92.07,9,FST+EN+LR; FST+EN+SVM_RBF; FST+RF+LR; FST+RF+SVM_RBF; fst_stat+EN+RF; fst_stat+EN+SVM_RBF; fst_stat+RF+SVM_RBF; stat+EN+RF; stat+EN+SVM_RBF
 65,FST+EN+SVM_RBF,93.26,1,FST+EN+SVM_RBF
-70,FST+EN+SVM_RBF,94.25,1,FST+EN+SVM_RBF
-75,FST+EN+SVM_RBF,94.25,1,FST+EN+SVM_RBF
-80,FST+EN+SVM_RBF,94.45,1,FST+EN+SVM_RBF
-90,FST+EN+SVM_RBF,95.84,2,FST+EN+LR; FST+EN+SVM_RBF
+70,FST+EN+SVM_RBF,94.25,2,FST+EN+SVM_RBF; fst_stat+RF+SVM_RBF
+75,FST+EN+SVM_RBF,94.25,3,FST+EN+SVM_RBF; fst_stat+EN+LR; fst_stat+RF+SVM_RBF
+80,FST+EN+SVM_RBF,94.45,2,FST+EN+SVM_RBF; fst_stat+RF+SVM_RBF
+90,FST+EN+SVM_RBF,95.84,3,FST+EN+LR; FST+EN+SVM_RBF; fst_stat+RF+SVM_RBF
 100,FST+EN+SVM_RBF,96.83,1,FST+EN+SVM_RBF
